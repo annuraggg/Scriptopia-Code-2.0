@@ -12,7 +12,7 @@ import {
 } from "@heroui/react";
 
 import { toast } from "sonner";
-import { useAuth, useUser } from "@clerk/clerk-react";
+import { useAuth, useUser } from "@/auth";
 import ax from "@/config/axios";
 
 interface ReviewProps {

@@ -14,7 +14,7 @@ import {
 } from "@heroui/react";
 import { UserCircle, Send, Briefcase, Book, Award, FileBadge, Globe, Check, X, ChevronDown } from 'lucide-react';
 import type { Candidate } from '@shared-types/Candidate';
-import { useAuth } from "@clerk/clerk-react";
+import { useAuth } from "@/auth";
 import ax from "@/config/axios";
 
 interface PostingForForm {

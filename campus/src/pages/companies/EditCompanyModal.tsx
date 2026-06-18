@@ -11,7 +11,7 @@ import {
   Divider,
 } from "@nextui-org/react";
 import { Save, ArrowLeft, Plus, Trash2 } from "lucide-react";
-import { useAuth } from "@clerk/clerk-react";
+import { useAuth } from "@/auth";
 import ax from "@/config/axios";
 import { Company, YearStats } from "@shared-types/Company";
 

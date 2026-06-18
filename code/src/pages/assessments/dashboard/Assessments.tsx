@@ -6,7 +6,7 @@ import { useQueries } from "@tanstack/react-query";
 import ax from "@/config/axios";
 import Loader from "@/components/Loader";
 import ErrorPage from "@/components/ErrorPage";
-import { useAuth } from "@clerk/clerk-react";
+import { useAuth } from "@/auth";
 import MCQAssess from "./MCQAssess";
 import CodeAssess from "./CodeAssess";
 

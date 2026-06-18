@@ -13,7 +13,7 @@ import {
 } from "@nextui-org/react";
 import { useState } from "react";
 import { toast } from "sonner";
-import { useAuth, useUser } from "@clerk/clerk-react";
+import { useAuth, useUser } from "@/auth";
 import ax from "@/config/axios";
 import { useDispatch } from "react-redux";
 import { setInstitute } from "@/reducers/instituteReducer";

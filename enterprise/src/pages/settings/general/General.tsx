@@ -4,7 +4,7 @@ import { Input } from "@heroui/input";
 import { useRef, useState } from "react";
 import { Breadcrumbs, BreadcrumbItem } from "@heroui/breadcrumbs";
 import { Upload } from "lucide-react";
-import { useAuth } from "@clerk/clerk-react";
+import { useAuth } from "@/auth";
 import ax from "@/config/axios";
 import { toast } from "sonner";
 import {

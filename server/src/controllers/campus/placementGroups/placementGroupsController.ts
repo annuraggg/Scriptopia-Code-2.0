@@ -1,7 +1,7 @@
 import Institute from "../../../models/Institute";
 import { sendError, sendSuccess } from "../../../utils/sendResponse";
 import { Context } from "hono";
-import clerkClient from "@/config/clerk";
+import userDirectory from "@/services/userDirectory";
 import checkInstitutePermission from "../../../middlewares/checkInstitutePermission";
 import PlacementGroup from "@/models/PlacementGroup";
 import Candidate from "@/models/Candidate";
@@ -36,7 +36,7 @@ const createPlacementGroup = async (c: Context) => {
     console.log("Request body:", body);
     const validationResult = PlacementGroupSchema.safeParse(body);
     if (!validationResult.success) {
-      console.error("Validation errors:", validationResult.error.errors);
+      console.error(validationResult.error.errors);
       return sendError(c, 400, validationResult.error.errors?.toString());
     }
 
@@ -52,12 +52,12 @@ const createPlacementGroup = async (c: Context) => {
       );
     }
 
-    const clerkUser = await clerkClient.users.getUser(userId);
-    if (!clerkUser) {
+    const accountUser = await userDirectory.users.getUser(userId);
+    if (!accountUser) {
       return sendError(c, 403, "User not found");
     }
 
-    const instituteId = (clerkUser.publicMetadata.institute as any)?._id;
+    const instituteId = (accountUser.publicMetadata.institute as any)?._id;
     if (!instituteId) {
       return sendError(c, 400, "Institute not associated with user");
     }
@@ -92,7 +92,7 @@ const createPlacementGroup = async (c: Context) => {
             auditLogs: {
               action: "create_placement_group",
               userId: _id,
-              user: clerkUser.fullName,
+              user: accountUser.fullName,
               type: "info",
               details: `Created placement group: ${validatedData.name}`,
               timestamp: new Date(),
@@ -160,12 +160,12 @@ const getPlacementGroups = async (c: Context) => {
     const limit = Math.min(parseInt(c.req.query("limit") || "10"), 50);
     const skip = (page - 1) * limit;
 
-    const clerkUser = await clerkClient.users.getUser(userId);
-    if (!clerkUser) {
+    const accountUser = await userDirectory.users.getUser(userId);
+    if (!accountUser) {
       return sendError(c, 403, "User not found");
     }
 
-    const instituteId = (clerkUser.publicMetadata.institute as any)?._id;
+    const instituteId = (accountUser.publicMetadata.institute as any)?._id;
     if (!instituteId) {
       return sendError(c, 400, "Institute not associated with user");
     }
@@ -220,12 +220,12 @@ const getPlacementGroup = async (c: Context) => {
       );
     }
 
-    const clerkUser = await clerkClient.users.getUser(userId);
-    if (!clerkUser) {
+    const accountUser = await userDirectory.users.getUser(userId);
+    if (!accountUser) {
       return sendError(c, 403, "User not found");
     }
 
-    const instituteId = (clerkUser.publicMetadata.institute as any)?._id;
+    const instituteId = (accountUser.publicMetadata.institute as any)?._id;
     if (!instituteId) {
       return sendError(c, 400, "Institute not associated with user");
     }
@@ -382,12 +382,12 @@ const acceptCandidate = async (c: Context) => {
       );
     }
 
-    const clerkUser = await clerkClient.users.getUser(userId);
-    if (!clerkUser) {
+    const accountUser = await userDirectory.users.getUser(userId);
+    if (!accountUser) {
       return sendError(c, 403, "User not found");
     }
 
-    const instituteId = (clerkUser.publicMetadata.institute as any)?._id;
+    const instituteId = (accountUser.publicMetadata.institute as any)?._id;
     if (!instituteId) {
       return sendError(c, 400, "Institute not associated with user");
     }
@@ -425,7 +425,7 @@ const acceptCandidate = async (c: Context) => {
         auditLogs: {
           action: "accept_candidate",
           userId: _id,
-          user: clerkUser.fullName,
+          user: accountUser.fullName,
           type: "info",
           details: `Accepted candidate ${candidate.name} to group: ${group.name}`,
           timestamp: new Date(),
@@ -468,12 +468,12 @@ const rejectCandidate = async (c: Context) => {
       );
     }
 
-    const clerkUser = await clerkClient.users.getUser(userId);
-    if (!clerkUser) {
+    const accountUser = await userDirectory.users.getUser(userId);
+    if (!accountUser) {
       return sendError(c, 403, "User not found");
     }
 
-    const instituteId = (clerkUser.publicMetadata.institute as any)?._id;
+    const instituteId = (accountUser.publicMetadata.institute as any)?._id;
     if (!instituteId) {
       return sendError(c, 400, "Institute not associated with user");
     }
@@ -510,7 +510,7 @@ const rejectCandidate = async (c: Context) => {
         auditLogs: {
           action: "reject_candidate",
           userId: _id,
-          user: clerkUser.fullName,
+          user: accountUser.fullName,
           type: "info",
           details: `Rejected candidate ${candidate.name} from group: ${group.name}`,
           timestamp: new Date(),
@@ -629,12 +629,12 @@ const updatePlacementGroup = async (c: Context) => {
       );
     }
 
-    const clerkUser = await clerkClient.users.getUser(userId);
-    if (!clerkUser) {
+    const accountUser = await userDirectory.users.getUser(userId);
+    if (!accountUser) {
       return sendError(c, 403, "User not found");
     }
 
-    const instituteId = (clerkUser.publicMetadata.institute as any)?._id;
+    const instituteId = (accountUser.publicMetadata.institute as any)?._id;
     if (!instituteId) {
       return sendError(c, 400, "Institute not associated with user");
     }
@@ -678,7 +678,7 @@ const updatePlacementGroup = async (c: Context) => {
             auditLogs: {
               action: "update_placement_group",
               userId,
-              user: clerkUser.fullName,
+              user: accountUser.fullName,
               type: "info",
               details: `Updated placement group: ${existingGroup.name}`,
               timestamp: new Date(),
@@ -729,12 +729,12 @@ const deletePlacementGroup = async (c: Context) => {
       );
     }
 
-    const clerkUser = await clerkClient.users.getUser(userId);
-    if (!clerkUser) {
+    const accountUser = await userDirectory.users.getUser(userId);
+    if (!accountUser) {
       return sendError(c, 403, "User not found");
     }
 
-    const instituteId = (clerkUser.publicMetadata.institute as any)?._id;
+    const instituteId = (accountUser.publicMetadata.institute as any)?._id;
     if (!instituteId) {
       return sendError(c, 400, "Institute not associated with user");
     }
@@ -788,7 +788,7 @@ const deletePlacementGroup = async (c: Context) => {
             auditLogs: {
               action: "delete_placement_group",
               userId,
-              user: clerkUser.fullName,
+              user: accountUser.fullName,
               type: "warning",
               details: `Deleted placement group: ${existingGroup.name}`,
               timestamp: new Date(),

@@ -1,7 +1,6 @@
 {
   "type": "module",
   "dependencies": {
-    "@clerk/backend": "^1.27.3",
     "csv-parse": "^5.6.0",
     "dotenv": "^16.5.0",
     "mongoose": "^8.13.2"

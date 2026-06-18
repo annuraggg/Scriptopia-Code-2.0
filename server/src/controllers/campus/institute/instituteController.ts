@@ -5,7 +5,7 @@ import User from "../../../models/User";
 import { User as IUser } from "@shared-types/User";
 import jwt from "jsonwebtoken";
 import loops from "../../../config/loops";
-import clerkClient from "../../../config/clerk";
+import userDirectory from "@/services/userDirectory";
 import logger from "../../../utils/logger";
 import r2Client from "../../../config/s3";
 import { Upload } from "@aws-sdk/lib-storage";
@@ -19,7 +19,6 @@ import {
 import defaultInstituteRoles from "@shared-data/defaultInstituteRoles";
 import institutePermissions from "@/data/institutePermissions";
 import checkInstitutePermission from "@/middlewares/checkInstitutePermission";
-import { UserJSON } from "@clerk/backend";
 import { UserMeta } from "@shared-types/UserMeta";
 import CandidateModel from "@/models/Candidate";
 import { Types } from "mongoose";
@@ -58,15 +57,15 @@ const createInstitute = async (c: Context) => {
 
     console.log(sanitizedAddress);
 
-    const clerkUserId = c.get("auth")?.userId;
-    if (!clerkUserId) {
+    const accountUserId = c.get("auth")?.userId;
+    if (!accountUserId) {
       return sendError(c, 401, "Authentication required");
     }
 
-    const clerkUser = await clerkClient.users.getUser(clerkUserId);
-    const fName = clerkUser.firstName || "";
-    const lName = clerkUser.lastName || "";
-    const uid = clerkUser.publicMetadata._id;
+    const accountUser = await userDirectory.users.getUser(accountUserId);
+    const fName = accountUser.firstName || "";
+    const lName = accountUser.lastName || "";
+    const uid = accountUser.publicMetadata._id;
 
     if (!uid) {
       return sendError(c, 400, "User metadata is missing");
@@ -156,7 +155,7 @@ const createInstitute = async (c: Context) => {
 
     membersArr.push({
       user: typeof uid === "string" ? uid : "",
-      email: clerkUser.emailAddresses[0].emailAddress,
+      email: accountUser.emailAddresses[0].emailAddress,
       role: adminRole?.slug,
       status: "active",
     });
@@ -204,9 +203,9 @@ const createInstitute = async (c: Context) => {
 
         institute = institute[0];
 
-        await clerkClient.users.updateUser(clerkUserId, {
+        await userDirectory.users.updateUser(accountUserId, {
           publicMetadata: {
-            ...clerkUser.publicMetadata,
+            ...accountUser.publicMetadata,
             institute: {
               _id: institute._id,
               name: institute.name,
@@ -293,8 +292,8 @@ const verifyInvite = async (c: Context) => {
       return sendError(c, 400, "Token is required");
     }
 
-    const clerkUser = await clerkClient.users.getUser(cid);
-    const email = clerkUser.emailAddresses[0].emailAddress;
+    const accountUser = await userDirectory.users.getUser(cid);
+    const email = accountUser.emailAddresses[0].emailAddress;
 
     let decoded;
     try {
@@ -372,8 +371,8 @@ const joinInstitute = async (c: Context) => {
       return sendError(c, 400, "Invalid status value");
     }
 
-    const clerkUser = await clerkClient.users.getUser(cid);
-    const email = clerkUser.emailAddresses[0].emailAddress;
+    const accountUser = await userDirectory.users.getUser(cid);
+    const email = accountUser.emailAddresses[0].emailAddress;
 
     let decoded;
     try {
@@ -433,9 +432,9 @@ const joinInstitute = async (c: Context) => {
       const session = await mongoose.startSession();
       try {
         await session.withTransaction(async () => {
-          await clerkClient.users.updateUser(cid, {
+          await userDirectory.users.updateUser(cid, {
             publicMetadata: {
-              ...clerkUser.publicMetadata,
+              ...accountUser.publicMetadata,
               institute: {
                 _id: decoded.institute,
                 name: institute.name,
@@ -447,12 +446,12 @@ const joinInstitute = async (c: Context) => {
           let inviterName = "Unknown";
           try {
             const inviterUser = await User.findById(decoded.inviterId);
-            if (inviterUser?.clerkId) {
-              const inviterClerk = await clerkClient.users.getUser(
-                inviterUser.clerkId
+            if (inviterUser?._id) {
+              const inviterAccount = await userDirectory.users.getUser(
+                inviterUser._id.toString()
               );
-              inviterName = `${inviterClerk.firstName || ""} ${
-                inviterClerk.lastName || ""
+              inviterName = `${inviterAccount.firstName || ""} ${
+                inviterAccount.lastName || ""
               }`.trim();
             }
           } catch (inviterError) {
@@ -460,8 +459,8 @@ const joinInstitute = async (c: Context) => {
           }
 
           const auditLog: AuditLog = {
-            user: `${clerkUser.firstName || ""} ${
-              clerkUser.lastName || ""
+            user: `${accountUser.firstName || ""} ${
+              accountUser.lastName || ""
             }`.trim(),
             userId: userId,
             action: `User Joined Institute. Invited By: ${inviterName}`,
@@ -503,8 +502,8 @@ const joinInstitute = async (c: Context) => {
       await sendNotificationToCampus({
         userIds: notifyingUsers,
         title: "New Member Joined",
-        message: `${clerkUser.firstName || ""} ${
-          clerkUser.lastName || ""
+        message: `${accountUser.firstName || ""} ${
+          accountUser.lastName || ""
         } has joined the institute.`,
       });
     }
@@ -625,7 +624,7 @@ const updateInstitute = async (c: Context) => {
       return sendError(c, 404, "Institute not found");
     }
 
-    const currentUser = await clerkClient.users.getUser(c.get("auth").userId);
+    const currentUser = await userDirectory.users.getUser(c.get("auth").userId);
     const inviterName = `${currentUser.firstName || ""} ${
       currentUser.lastName || ""
     }`.trim();
@@ -673,16 +672,16 @@ const updateInstitute = async (c: Context) => {
           (async () => {
             try {
               const user = await User.findById(member.user);
-              if (!user?.clerkId) return;
+              if (!user?._id) return;
 
-              const clerkUserToUpdate = await clerkClient.users.getUser(
-                user.clerkId
+              const accountUserToUpdate = await userDirectory.users.getUser(
+                user._id.toString()
               );
               const currentMetadata =
-                clerkUserToUpdate.publicMetadata as unknown as UserMeta;
+                accountUserToUpdate.publicMetadata as unknown as UserMeta;
 
               if (currentMetadata.institute?._id === instituteId.toString()) {
-                await clerkClient.users.updateUser(user.clerkId, {
+                await userDirectory.users.updateUser(user._id.toString(), {
                   publicMetadata: {
                     ...currentMetadata,
                     institute: null,
@@ -691,7 +690,7 @@ const updateInstitute = async (c: Context) => {
               }
             } catch (error) {
               logger.error(
-                `Failed to update Clerk metadata for removed user: ${member.user}`
+                `Failed to update identity provider metadata for removed user: ${member.user}`
               );
             }
           })()
@@ -713,13 +712,13 @@ const updateInstitute = async (c: Context) => {
         (async () => {
           try {
             const user = await User.findById(oldMember.user);
-            if (!user?.clerkId) return;
+            if (!user?._id) return;
 
-            const clerkUserToUpdate = await clerkClient.users.getUser(
-              user.clerkId
+            const accountUserToUpdate = await userDirectory.users.getUser(
+              user._id.toString()
             );
             const currentMetadata =
-              clerkUserToUpdate.publicMetadata as unknown as UserMeta;
+              accountUserToUpdate.publicMetadata as unknown as UserMeta;
 
             if (currentMetadata.institute?._id === instituteId.toString()) {
               const role = institute.roles.find(
@@ -727,7 +726,7 @@ const updateInstitute = async (c: Context) => {
               );
               if (!role) return;
 
-              await clerkClient.users.updateUser(user.clerkId, {
+              await userDirectory.users.updateUser(user._id.toString(), {
                 publicMetadata: {
                   ...currentMetadata,
                   institute: {
@@ -739,7 +738,7 @@ const updateInstitute = async (c: Context) => {
             }
           } catch (error) {
             logger.error(
-              `Failed to update role in Clerk metadata for user: ${oldMember.user}`
+              `Failed to update role in identity provider metadata for user: ${oldMember.user}`
             );
           }
         })()
@@ -899,7 +898,7 @@ const updateGeneralSettings = async (c: Context) => {
       return sendError(c, 400, "Institute with this email already exists");
     }
 
-    const user = await clerkClient.users.getUser(c.get("auth").userId);
+    const user = await userDirectory.users.getUser(c.get("auth").userId);
     const auditLog: AuditLog = {
       user: `${user.firstName || ""} ${user.lastName || ""}`.trim(),
       userId: c.get("auth")._id,
@@ -924,12 +923,12 @@ const updateGeneralSettings = async (c: Context) => {
             if (!member.user || member.status !== "active") continue;
 
             const userDoc = await User.findById(member.user);
-            if (!userDoc?.clerkId) continue;
+            if (!userDoc?._id) continue;
 
             updatePromises.push(
               (async () => {
                 try {
-                  const u = await clerkClient.users.getUser(userDoc.clerkId);
+                  const u = await userDirectory.users.getUser(userDoc._id.toString());
                   const publicMetadata =
                     u.publicMetadata as unknown as UserMeta;
                   if (
@@ -937,14 +936,14 @@ const updateGeneralSettings = async (c: Context) => {
                     publicMetadata.institute._id === instituteId.toString()
                   ) {
                     publicMetadata.institute.name = sanitizedName;
-                    await clerkClient.users.updateUser(userDoc.clerkId, {
+                    await userDirectory.users.updateUser(userDoc._id.toString(), {
                       publicMetadata:
-                        publicMetadata as unknown as UserPublicMetadata,
+                        publicMetadata as unknown as Record<string, unknown>,
                     });
                   }
                 } catch (error) {
                   logger.error(
-                    `Failed to update institute name for user ${userDoc.clerkId}: ${error}`
+                    `Failed to update institute name for user ${userDoc._id.toString()}: ${error}`
                   );
                 }
               })()
@@ -1054,7 +1053,7 @@ const updateLogo = async (c: Context) => {
 
     await upload.done();
 
-    const user = await clerkClient.users.getUser(c.get("auth").userId);
+    const user = await userDirectory.users.getUser(c.get("auth").userId);
     const auditLog: AuditLog = {
       user: `${user.firstName || ""} ${user.lastName || ""}`.trim(),
       userId: c.get("auth")._id,
@@ -1122,9 +1121,9 @@ const updateMembers = async (c: Context) => {
       return sendError(c, 404, "Institute not found");
     }
 
-    const clerkUser = await clerkClient.users.getUser(c.get("auth").userId);
-    const fullName = `${clerkUser.firstName || ""} ${
-      clerkUser.lastName || ""
+    const accountUser = await userDirectory.users.getUser(c.get("auth").userId);
+    const fullName = `${accountUser.firstName || ""} ${
+      accountUser.lastName || ""
     }`.trim();
 
     const oldMembers = institute.members;
@@ -1149,16 +1148,16 @@ const updateMembers = async (c: Context) => {
 
             try {
               const user = await User.findById(member.user);
-              if (!user?.clerkId) continue;
+              if (!user?._id) continue;
 
-              const clerkUserToUpdate = await clerkClient.users.getUser(
-                user.clerkId
+              const accountUserToUpdate = await userDirectory.users.getUser(
+                user._id.toString()
               );
               const currentMetadata =
-                clerkUserToUpdate.publicMetadata as unknown as UserMeta;
+                accountUserToUpdate.publicMetadata as unknown as UserMeta;
 
               if (currentMetadata.institute?._id === instituteId.toString()) {
-                await clerkClient.users.updateUser(user.clerkId, {
+                await userDirectory.users.updateUser(user._id.toString(), {
                   publicMetadata: {
                     ...currentMetadata,
                     institute: null,
@@ -1167,7 +1166,7 @@ const updateMembers = async (c: Context) => {
               }
             } catch (error) {
               logger.error(
-                `Failed to update Clerk metadata for user: ${member.user}: ${error}`
+                `Failed to update identity provider metadata for user: ${member.user}: ${error}`
               );
             }
           }
@@ -1184,20 +1183,20 @@ const updateMembers = async (c: Context) => {
 
           try {
             const user = await User.findById(oldMember.user);
-            if (!user?.clerkId) continue;
+            if (!user?._id) continue;
 
-            const clerkUserToUpdate = await clerkClient.users.getUser(
-              user.clerkId
+            const accountUserToUpdate = await userDirectory.users.getUser(
+              user._id.toString()
             );
             const currentMetadata =
-              clerkUserToUpdate.publicMetadata as unknown as UserMeta;
+              accountUserToUpdate.publicMetadata as unknown as UserMeta;
 
             if (currentMetadata.institute?._id === instituteId.toString()) {
               const role = institute.roles.find(
                 (r) => r.slug === newMember.role
               );
 
-              await clerkClient.users.updateUser(user.clerkId, {
+              await userDirectory.users.updateUser(user._id.toString(), {
                 publicMetadata: {
                   ...currentMetadata,
                   institute: {
@@ -1209,7 +1208,7 @@ const updateMembers = async (c: Context) => {
             }
           } catch (error) {
             logger.error(
-              `Failed to update role in Clerk metadata for user: ${oldMember.user}: ${error}`
+              `Failed to update role in identity provider metadata for user: ${oldMember.user}: ${error}`
             );
           }
         }
@@ -1243,7 +1242,7 @@ const updateMembers = async (c: Context) => {
             email,
             role: role.slug,
             institute: instituteId,
-            inviter: clerkUser.firstName || "",
+            inviter: accountUser.firstName || "",
             inviterId: c.get("auth")._id,
             institutename: institute.name,
           };
@@ -1257,7 +1256,7 @@ const updateMembers = async (c: Context) => {
               transactionalId: process.env.LOOPS_INVITE_EMAIL!,
               email,
               dataVariables: {
-                inviter: clerkUser.firstName || "",
+                inviter: accountUser.firstName || "",
                 joinlink: `${process.env
                   .ENTERPRISE_FRONTEND_URL!}/join?token=${token}`,
                 institutename: institute.name,
@@ -1269,7 +1268,10 @@ const updateMembers = async (c: Context) => {
         }
 
         const finalMembers = members.map((member: Member) => ({
-          user: (member.user as unknown as UserJSON)?.id || null,
+          user:
+            (member.user as any)?._id?.toString() ||
+            (member.user as any)?.id ||
+            null,
           email: sanitizeInput(member.email),
           role: member.role,
           addedOn: (member as any).addedOn || new Date(),
@@ -1388,9 +1390,9 @@ const updateRoles = async (c: Context) => {
       return sendError(c, 400, "Cannot modify default system roles");
     }
 
-    const clerkUser = await clerkClient.users.getUser(c.get("auth").userId);
-    const fullName = `${clerkUser.firstName || ""} ${
-      clerkUser.lastName || ""
+    const accountUser = await userDirectory.users.getUser(c.get("auth").userId);
+    const fullName = `${accountUser.firstName || ""} ${
+      accountUser.lastName || ""
     }`.trim();
 
     const auditLog: AuditLog = {
@@ -1687,12 +1689,12 @@ const leaveInstitute = async (c: Context) => {
   }
 
   try {
-    const clerkUser = await clerkClient.users.getUser(userId);
-    if (!clerkUser) {
+    const accountUser = await userDirectory.users.getUser(userId);
+    if (!accountUser) {
       return sendError(c, 404, "User not found");
     }
 
-    const userMeta = clerkUser.publicMetadata as unknown as UserMeta;
+    const userMeta = accountUser.publicMetadata as unknown as UserMeta;
     if (!userMeta.institute) {
       return sendError(c, 404, "You are not a member of any institute");
     }
@@ -1704,7 +1706,7 @@ const leaveInstitute = async (c: Context) => {
 
     const institute = await Institute.findById(instituteId);
     if (!institute) {
-      await clerkClient.users.updateUser(userId, {
+      await userDirectory.users.updateUser(userId, {
         publicMetadata: {
           ...userMeta,
           institute: null,
@@ -1723,7 +1725,7 @@ const leaveInstitute = async (c: Context) => {
     );
 
     if (!member) {
-      await clerkClient.users.updateUser(userId, {
+      await userDirectory.users.updateUser(userId, {
         publicMetadata: {
           ...userMeta,
           institute: null,
@@ -1760,7 +1762,7 @@ const leaveInstitute = async (c: Context) => {
         member.status = "inactive";
         await institute.save({ session });
 
-        await clerkClient.users.updateUser(clerkUser.id, {
+        await userDirectory.users.updateUser(accountUser.id, {
           publicMetadata: {
             ...userMeta,
             institute: null,
@@ -1787,7 +1789,7 @@ const leaveInstitute = async (c: Context) => {
       await sendNotificationToCampus({
         userIds: notifyingUsers,
         title: "Member Left Institute",
-        message: `${clerkUser.firstName} ${clerkUser.lastName} has left the institute`,
+        message: `${accountUser.firstName} ${accountUser.lastName} has left the institute`,
       });
     }
 

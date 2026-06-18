@@ -79,17 +79,16 @@ getIoServer().then((server) => {
 });
 
 const getMeetJWT = async (c: Context) => {
-  const clerkId = await c.get("auth").userId;
   const userId = await c.get("auth")._id;
 
-  console.log("Meet JWT", userId, clerkId);
-  if (!clerkId) return sendError(c, 401, "Unauthorized");
+  console.log("Meet JWT", userId);
+  if (!userId) return sendError(c, 401, "Unauthorized");
 
   let name = "";
   let isInterviewer = false;
   let isCandidate = false;
 
-  console.log("Here 1", userId, clerkId);
+  console.log("Here 1", userId);
 
   const orgPerms = await checkOrganizationPermission.all(c, ["manage_job"]);
   if (orgPerms.allowed) {
@@ -101,9 +100,9 @@ const getMeetJWT = async (c: Context) => {
     if (!organization) return sendError(c, 401, "Unauthorized");
 
     const memberIdMap = organization.members.map((m) => m.user?.toString());
-    console.log("Member ID Map", memberIdMap, userId, clerkId);
+    console.log("Member ID Map", memberIdMap, userId);
     if (!memberIdMap.includes(userId)) return sendError(c, 401, "Unauthorized");
-    console.log("Here 2", userId, clerkId);
+    console.log("Here 2", userId);
     isInterviewer = true;
     name = "Interviewer";
   }

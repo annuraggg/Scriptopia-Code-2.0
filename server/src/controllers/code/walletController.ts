@@ -9,7 +9,7 @@ const getWallet = async (c: Context) => {
 
     console.log("Fetching wallet for userId:", userId);
 
-    const user = await User.findOne({ clerkId: userId });
+    const user = await User.findOne({ userId: userId });
 
     console.log("User found:", !!user);
 

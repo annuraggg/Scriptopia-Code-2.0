@@ -5,7 +5,7 @@ import Contact from "./Contact";
 import Team from "./Team";
 import { Button } from "@nextui-org/react";
 import { toast } from "sonner";
-import { SignOutButton, useAuth, useUser } from "@clerk/clerk-react";
+import { SignOutButton, useAuth, useUser } from "@/auth";
 import { setInstitute } from "@/reducers/instituteReducer";
 import { useDispatch } from "react-redux";
 import ax from "@/config/axios";

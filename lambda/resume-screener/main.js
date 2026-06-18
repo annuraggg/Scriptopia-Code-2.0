@@ -32,6 +32,10 @@ const connectToMongoDB = async (posting) => {
   let retries = 0;
   while (retries < MAX_RETRIES) {
     try {
+      const connectionPromise = mongoose.connect(process.env.MONGO_URI, {
+        dbName: process.env.MONGO_DB,
+        connectTimeoutMS: MONGODB_TIMEOUT,
+      });
       await mongoose.connect(process.env.MONGO_URI, {
         dbName: process.env.MONGO_DB,
         connectTimeoutMS: MONGODB_TIMEOUT,

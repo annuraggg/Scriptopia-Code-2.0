@@ -5,7 +5,7 @@ import logger from "../../../utils/logger";
 import { Context } from "hono";
 import Organization from "@/models/Organization";
 import mongoose from "mongoose";
-import clerkClient from "@/config/clerk";
+import userDirectory from "@/services/userDirectory";
 import { AuditLog } from "@shared-types/Organization";
 import Meet from "@/models/Meet";
 import AssignmentSubmission from "@/models/AssignmentSubmission";
@@ -161,10 +161,10 @@ const createPosting = async (c: Context) => {
 
     await newPostingFetched.save();
 
-    const clerkUser = await clerkClient.users.getUser(c.get("auth").userId);
+    const accountUser = await userDirectory.users.getUser(c.get("auth").userId);
     const auditLog: AuditLog = {
-      user: clerkUser.firstName + " " + clerkUser.lastName,
-      userId: clerkUser.id,
+      user: accountUser.firstName + " " + accountUser.lastName,
+      userId: accountUser.id,
       action: `Created New Job Posting: ${posting.title}`,
       type: "info",
     };
@@ -198,10 +198,10 @@ const createWorkflow = async (c: Context) => {
     posting.workflow = formattedData;
     await posting.save();
 
-    const clerkUser = await clerkClient.users.getUser(c.get("auth").userId);
+    const accountUser = await userDirectory.users.getUser(c.get("auth").userId);
     const auditLog: AuditLog = {
-      user: clerkUser.firstName + " " + clerkUser.lastName,
-      userId: clerkUser.id,
+      user: accountUser.firstName + " " + accountUser.lastName,
+      userId: accountUser.id,
       action: `Created New Workflow for Job Posting: ${posting.title}`,
       type: "info",
     };
@@ -264,10 +264,10 @@ const updateAts = async (c: Context) => {
 
     await posting.save();
 
-    const clerkUser = await clerkClient.users.getUser(c.get("auth").userId);
+    const accountUser = await userDirectory.users.getUser(c.get("auth").userId);
     const auditLog: AuditLog = {
-      user: clerkUser.firstName + " " + clerkUser.lastName,
-      userId: clerkUser.id,
+      user: accountUser.firstName + " " + accountUser.lastName,
+      userId: accountUser.id,
       action: `Updated ATS for Job Posting: ${posting.title}`,
       type: "info",
     };
@@ -314,10 +314,10 @@ const updateAssignment = async (c: Context) => {
     });
     await posting.save();
 
-    const clerkUser = await clerkClient.users.getUser(c.get("auth").userId);
+    const accountUser = await userDirectory.users.getUser(c.get("auth").userId);
     const auditLog: AuditLog = {
-      user: clerkUser.firstName + " " + clerkUser.lastName,
-      userId: clerkUser.id,
+      user: accountUser.firstName + " " + accountUser.lastName,
+      userId: accountUser.id,
       action: `Created New Assignment for Job Posting: ${posting.title}`,
       type: "info",
     };
@@ -357,10 +357,10 @@ const updateInterview = async (c: Context) => {
 
     await posting.save();
 
-    const clerkUser = await clerkClient.users.getUser(c.get("auth").userId);
+    const accountUser = await userDirectory.users.getUser(c.get("auth").userId);
     const auditLog: AuditLog = {
-      user: clerkUser.firstName + " " + clerkUser.lastName,
-      userId: clerkUser.id,
+      user: accountUser.firstName + " " + accountUser.lastName,
+      userId: accountUser.id,
       action: `Created New Interview for Job Posting: ${posting.title}`,
       type: "info",
     };
@@ -397,10 +397,10 @@ const publishPosting = async (c: Context) => {
     posting.url = urlSlug;
     await posting.save();
 
-    const clerkUser = await clerkClient.users.getUser(c.get("auth").userId);
+    const accountUser = await userDirectory.users.getUser(c.get("auth").userId);
     const auditLog: AuditLog = {
-      user: clerkUser.firstName + " " + clerkUser.lastName,
-      userId: clerkUser.id,
+      user: accountUser.firstName + " " + accountUser.lastName,
+      userId: accountUser.id,
       action: `Published Job Posting: ${posting.title}`,
       type: "info",
     };

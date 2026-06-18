@@ -4,7 +4,7 @@ import { useEffect } from "react";
 import { RouterProvider } from "react-router-dom";
 import { useDispatch } from "react-redux";
 import { setOrganization } from "./reducers/organizationReducer";
-import { useUser } from "@clerk/clerk-react";
+import { useUser } from "@/auth";
 import router from "./routes";
 
 function App() {

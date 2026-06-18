@@ -5,12 +5,12 @@ import {
   SignedIn,
   SignedOut,
   useAuth,
-} from "@clerk/clerk-react";
-import { useEffect, useState, useCallback } from "react";
+} from "@/auth";
+import { useCallback, useEffect, useState } from "react";
 import ax from "@/config/axios";
 import { toast } from "sonner";
 import { MemberWithPermission as MWP } from "@shared-types/MemberWithPermission";
-import { Menu } from "lucide-react";
+import { Bell, Menu, Search } from "lucide-react";
 import { Button } from "@nextui-org/react";
 import { AnimatePresence, motion } from "framer-motion";
 import { ExtendedInstitute } from "@shared-types/ExtendedInstitute";
@@ -29,6 +29,10 @@ const Layout = () => {
   const { getToken } = useAuth();
   const axios = ax(getToken);
 
+  const unreadCount =
+    notifications?.filter((notification) => !notification.readBy?.includes(user?.user!))
+      ?.length || 0;
+
   const setNotifications = useCallback(
     (updatedNotifications: Notification[], notificationId: string) => {
       setNotificationsState(updatedNotifications);
@@ -37,7 +41,6 @@ const Layout = () => {
         (notification) => notification._id === notificationId
       );
 
-      console.log("Newly read notification:", newlyReadNotification);
       if (newlyReadNotification) {
         axios
           .post(`/users/notifications/${newlyReadNotification._id}`)
@@ -47,19 +50,17 @@ const Layout = () => {
           });
       }
     },
-    [notifications, user._id, axios]
+    [axios]
   );
-  
+
   useEffect(() => {
     const checkMobile = () => {
-      const mobile = window.innerWidth < 640;
+      const mobile = window.innerWidth < 900;
       setIsMobile(mobile);
-      if (!mobile) {
-        setIsMobileMenuOpen(false);
-      }
+      if (!mobile) setIsMobileMenuOpen(false);
     };
 
-    checkMobile(); // Initial check
+    checkMobile();
     window.addEventListener("resize", checkMobile);
     return () => window.removeEventListener("resize", checkMobile);
   }, []);
@@ -70,67 +71,60 @@ const Layout = () => {
       .then((res) => {
         setInstitute(res.data.data.institute);
         setUser(res.data.data.user);
-        console.log(res.data.data.institute);
       })
       .catch((err) => {
-        if (err.response.status === 404) {
-          return (window.location.href = "/onboarding");
+        if (err.response?.status === 404) {
+          window.location.href = "/onboarding";
+          return;
         }
-        toast;
-        toast.error(err.response.data.message || "An error occurred");
+        toast.error(err.response?.data?.message || "An error occurred");
       })
       .finally(() => {
-        setRerender(!rerender);
+        setRerender((current) => !current);
       });
 
-    axios.get("/users/notifications?platform=campus").then((res) => {
-      console.log(res.data.data);
-      setNotificationsState(res.data.data);
-    });
+    axios
+      .get("/users/notifications?platform=campus")
+      .then((res) => setNotificationsState(res.data.data))
+      .catch(() => setNotificationsState([]));
   }, []);
 
   const updateInstitute = (newInstitute: ExtendedInstitute) => {
     setInstitute(newInstitute);
-    setRerender(!rerender);
-  };
-
-  const toggleMobileMenu = () => {
-    setIsMobileMenuOpen(!isMobileMenuOpen);
+    setRerender((current) => !current);
   };
 
   return (
     <>
       <SignedIn>
-        <div className="relative min-h-screen bg-background">
-          {/* Mobile Header */}
-          <div className="sm:hidden fixed top-0 left-0 right-0 h-16 border-b z-40 px-5 flex items-center justify-between">
-            <img
-              src="/logo.svg"
-              alt="logo"
-              className="h-6 cursor-pointer"
-              onClick={() => {
-                window.location.href = "/";
-              }}
-            />
-            <Button
-              isIconOnly
-              variant="light"
-              onClick={toggleMobileMenu}
-              className="pr-4"
+        <div className="min-h-screen bg-slate-50 text-slate-950">
+          <div className="sticky top-0 z-40 flex h-16 items-center justify-between border-b border-slate-200 bg-white/95 px-4 backdrop-blur lg:hidden">
+            <button
+              className="inline-flex h-10 w-10 items-center justify-center rounded-md border border-slate-200 text-slate-700"
+              onClick={() => setIsMobileMenuOpen(true)}
+              aria-label="Open navigation"
             >
-              <Menu className="h-6 w-6" />
+              <Menu className="h-5 w-5" />
+            </button>
+            <img src="/logo.svg" alt="Scriptopia Campus" className="h-7" />
+            <Button isIconOnly variant="light" aria-label="Notifications">
+              <Bell className="h-5 w-5" />
+              {unreadCount > 0 && (
+                <span className="absolute right-2 top-2 h-2 w-2 rounded-full bg-rose-500" />
+              )}
             </Button>
           </div>
 
-          <div className="flex w-full">
-            {/* Mobile Menu Overlay */}
+          <div className="flex min-h-screen">
             <AnimatePresence>
-              {isMobileMenuOpen && (
-                <motion.div
+              {isMobile && isMobileMenuOpen && (
+                <motion.button
+                  type="button"
+                  aria-label="Close navigation overlay"
                   initial={{ opacity: 0 }}
-                  animate={{ opacity: 0.5 }}
+                  animate={{ opacity: 1 }}
                   exit={{ opacity: 0 }}
-                  className="fixed inset-0 z-40 sm:hidden"
+                  className="fixed inset-0 z-40 bg-slate-950/40 lg:hidden"
                   onClick={() => setIsMobileMenuOpen(false)}
                 />
               )}
@@ -143,15 +137,11 @@ const Layout = () => {
                   initial={isMobile ? { x: -320 } : false}
                   animate={{ x: 0 }}
                   exit={isMobile ? { x: -320 } : undefined}
-                  transition={{ type: "spring", bounce: 0, duration: 0.3 }}
-                  className={`${isMobile ? "fixed" : "relative"} z-50`}
+                  transition={{ type: "spring", bounce: 0, duration: 0.28 }}
+                  className={`${isMobile ? "fixed left-0 top-0 z-50" : "sticky top-0 z-30"} h-screen`}
                 >
                   <Sidebar
-                    notifications={
-                      notifications?.filter(
-                        (n) => !n.readBy?.includes(user?.user!)
-                      )?.length
-                    }
+                    notifications={unreadCount}
                     institute={institute}
                     user={user}
                     isMobile={isMobile}
@@ -161,21 +151,56 @@ const Layout = () => {
               )}
             </AnimatePresence>
 
-            <div
-              className={`flex-1 min-h-screen bg-background max-h-screen overflow-y-auto ${
-                isMobile ? "pt-16" : "px-5"
-              }`}
-            >
-              <Outlet
-                context={{
-                  notifications,
-                  setNotifications, // Use our custom function that sends POST requests
-                  user,
-                  institute,
-                  setInstitute: updateInstitute,
-                  rerender,
-                }}
-              />
+            <div className="flex min-w-0 flex-1 flex-col">
+              <div className="hidden h-16 items-center justify-between border-b border-slate-200 bg-white/80 px-6 backdrop-blur lg:flex">
+                <div className="flex min-w-0 items-center gap-3">
+                  <div className="flex h-9 w-9 items-center justify-center rounded-md bg-slate-950 text-sm font-semibold text-white">
+                    {(institute?.name || "C").slice(0, 1).toUpperCase()}
+                  </div>
+                  <div className="min-w-0">
+                    <p className="truncate text-sm font-semibold text-slate-950">
+                      {institute?.name || "Campus workspace"}
+                    </p>
+                    <p className="truncate text-xs text-slate-500">
+                      {user?.role ? `${user.role} access` : "Placement operations"}
+                    </p>
+                  </div>
+                </div>
+
+                <div className="flex items-center gap-3">
+                  <div className="hidden h-10 w-[320px] items-center gap-2 rounded-md border border-slate-200 bg-slate-50 px-3 text-sm text-slate-500 xl:flex">
+                    <Search className="h-4 w-4" />
+                    Search drives, companies, candidates
+                  </div>
+                  <Button
+                    isIconOnly
+                    variant="light"
+                    aria-label={`${unreadCount} unread notifications`}
+                    className="relative"
+                    onClick={() => {
+                      window.location.href = "/notifications";
+                    }}
+                  >
+                    <Bell className="h-5 w-5 text-slate-600" />
+                    {unreadCount > 0 && (
+                      <span className="absolute right-2 top-2 h-2 w-2 rounded-full bg-rose-500" />
+                    )}
+                  </Button>
+                </div>
+              </div>
+
+              <div className="min-h-[calc(100vh-4rem)] flex-1 overflow-y-auto">
+                <Outlet
+                  context={{
+                    notifications,
+                    setNotifications,
+                    user,
+                    institute,
+                    setInstitute: updateInstitute,
+                    rerender,
+                  }}
+                />
+              </div>
             </div>
           </div>
         </div>

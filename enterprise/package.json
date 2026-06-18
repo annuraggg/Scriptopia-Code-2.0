@@ -13,7 +13,6 @@
     "typecheck": "tsc -b --noEmit"
   },
   "dependencies": {
-    "@clerk/clerk-react": "^5.2.10",
     "@heroui/alert": "^2.2.13",
     "@heroui/autocomplete": "^2.3.14",
     "@heroui/avatar": "^2.2.10",

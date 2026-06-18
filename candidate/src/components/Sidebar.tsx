@@ -20,8 +20,9 @@ import {
   IconColorPicker,
   IconBooks,
   IconUsersGroup,
+  IconSettingsFilled,
 } from "@tabler/icons-react";
-import { UserButton } from "@clerk/clerk-react";
+import { UserButton } from "@/auth";
 import { ExtendedCandidate } from "@shared-types/ExtendedCandidate";
 
 interface SidebarProps {
@@ -166,6 +167,12 @@ const Sidebar = ({
   ];
 
   const bottomItems: SidebarProps[] = [
+    {
+      icon: IconSettingsFilled,
+      label: "Account",
+      link: "account",
+      visible: true,
+    },
     {
       icon: IconBellFilled,
       label: "Notifications",

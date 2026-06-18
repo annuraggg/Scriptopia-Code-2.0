@@ -1,15 +1,15 @@
 import { Context } from "hono";
 import { sendError, sendSuccess } from "../../../utils/sendResponse";
 import Organization from "../../../models/Organization";
-import clerkClient from "../../../config/clerk";
+import userDirectory from "@/services/userDirectory";
 import logger from "../../../utils/logger";
 import { Member } from "@shared-types/Organization";
 
 const getNotifications = async (c: Context) => {
   try {
-    const clerkUser = await clerkClient.users.getUser(c.get("auth").userId);
+    const accountUser = await userDirectory.users.getUser(c.get("auth").userId);
     const organization = await Organization.findOne({
-      _id: clerkUser.publicMetadata.orgId,
+      _id: accountUser.publicMetadata.organization?._id,
     });
 
     if (!organization) {
@@ -17,7 +17,7 @@ const getNotifications = async (c: Context) => {
     }
 
     const user = organization.members.find(
-      (member) => (member as unknown as Member).user === clerkUser.id
+      (member) => (member as unknown as Member).user === accountUser.id
     );
 
     if (!user) {
@@ -40,9 +40,9 @@ const getNotifications = async (c: Context) => {
 const readNotification = async (c: Context) => {
   try {
     const { id } = await c.req.json();
-    const clerkUser = await clerkClient.users.getUser(c.get("auth").userId);
+    const accountUser = await userDirectory.users.getUser(c.get("auth").userId);
     const organization = await Organization.findOne({
-      _id: clerkUser.publicMetadata.orgId,
+      _id: accountUser.publicMetadata.organization?._id,
     });
 
     if (!organization) {
@@ -50,7 +50,7 @@ const readNotification = async (c: Context) => {
     }
 
     const user = organization.members.find(
-      (member) => (member as unknown as Member).user === clerkUser.id
+      (member) => (member as unknown as Member).user === accountUser.id
     );
 
     if (!user) {

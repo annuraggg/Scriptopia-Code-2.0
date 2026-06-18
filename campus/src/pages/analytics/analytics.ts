@@ -5,7 +5,7 @@
     OfferLetterStats,
     TimeRangeStats,
   } from "@shared-types/InstituteAnalytics";
-  import { useAuth } from "@clerk/clerk-react";
+  import { useAuth } from "@/auth";
   import ax from "@/config/axios";
 
   export const useAnalyticsService = () => {

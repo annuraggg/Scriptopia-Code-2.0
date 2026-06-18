@@ -13,8 +13,6 @@
     "typecheck": "tsc -b"
   },
   "dependencies": {
-    "@clerk/clerk-react": "^5.2.2",
-    "@clerk/themes": "^2.1.8",
     "@heroui/react": "2.7.4",
     "@monaco-editor/react": "^4.6.0",
     "@radix-ui/react-dialog": "^1.0.5",

@@ -1,21 +1,18 @@
-import { useNavigate } from "react-router-dom";
-import { Tooltip } from "@nextui-org/tooltip";
-import { ChevronRight, X } from "lucide-react";
+import { useLocation, useNavigate } from "react-router-dom";
+import { X } from "lucide-react";
 import {
-  IconLayoutDashboardFilled,
-  IconBriefcaseFilled,
-  IconUserFilled,
-  IconChartPieFilled,
-  IconBellFilled,
-  IconSettingsFilled,
-  IconBuilding,
-  IconUsersGroup,
-  IconDoorExit,
-} from "@tabler/icons-react";
-import { useEffect, useState } from "react";
-import { useAuth, UserButton /*useAuth*/ } from "@clerk/clerk-react";
+  Bell,
+  BriefcaseBusiness,
+  Building2,
+  BarChart3,
+  LayoutDashboard,
+  LogOut,
+  Settings,
+  Users,
+  UserRoundCheck,
+} from "lucide-react";
+import { useAuth, UserButton } from "@/auth";
 import {
-  Badge,
   Button,
   Modal,
   ModalContent,
@@ -27,9 +24,12 @@ import { MemberWithPermission } from "@shared-types/MemberWithPermission";
 import { ExtendedInstitute } from "@shared-types/ExtendedInstitute";
 import ax from "@/config/axios";
 import { toast } from "sonner";
+import { useState } from "react";
+import { cn } from "@/lib/utils";
 
 const Sidebar = ({
   notifications,
+  institute,
   user,
   isMobile,
   onClose,
@@ -40,131 +40,96 @@ const Sidebar = ({
   isMobile: boolean;
   onClose?: () => void;
 }) => {
-  const topItems = [
-    {
-      icon: IconLayoutDashboardFilled,
-      label: "Dashboard",
-      link: "/dashboard",
-      visible: true,
-    },
-    {
-      icon: IconBriefcaseFilled,
-      label: "Drives",
-      link: "/drives",
-      visible:
-        user?.permissions?.includes("view_drive") ||
-        user?.permissions?.includes("manage_drive"),
-    },
-    {
-      icon: IconUsersGroup,
-      label: "Placement Groups",
-      link: "/placement-groups",
-      visible:
-        user?.permissions?.includes("view_drive") ||
-        user?.permissions?.includes("manage_drive"),
-    },
-    {
-      icon: IconBuilding,
-      label: "Company Profiles",
-      link: "/companies",
-      visible:
-        user?.permissions?.includes("view_drive") ||
-        user?.permissions?.includes("manage_drive"),
-    },
-    {
-      icon: IconUserFilled,
-      label: "Candidates",
-      link: "/candidates/active",
-      visible:
-        user?.permissions?.includes("view_drive") ||
-        user?.permissions?.includes("manage_drive") ||
-        user?.permissions?.includes("verify_candidate"),
-    },
-    {
-      icon: IconChartPieFilled,
-      label: "Analytics",
-      link: "/analytics",
-      visible:
-        user?.permissions?.includes("view_analytics") ||
-        user?.permissions?.includes("manage_institute"),
-    },
-    // {
-    //   icon: Calendar,
-    //   label: "Calendar",
-    //   link: "/calendar",
-    //   visible: true,
-    // },
-  ];
-
-  const bottomItems = [
-    {
-      icon: IconBellFilled,
-      label: "Notifications",
-      link: "/notifications",
-      visible: true,
-      length: notifications,
-    },
-    {
-      icon: IconSettingsFilled,
-      label: "Settings",
-      link: "/settings/general",
-      visible: user?.permissions?.includes("manage_institute"),
-    },
-    // {
-    //   icon: IconCreditCardFilled,
-    //   label: "Billing",
-    //   link: "/billing",
-    //   visible:
-    //     user?.permissions?.includes("view_billing") ||
-    //     user?.permissions?.includes("manage_billing"),
-    // },
-    // {
-    //   icon: BookOpenText,
-    //   label: "Documentation",
-    //   link: "/documentation",
-    //   visible: true,
-    // },
-    // {
-    //   icon: HelpCircle,
-    //   label: "Support",
-    //   link: "/support",
-    //   visible: true,
-    // },
-  ];
-
-  const [active, setActive] = useState("dashboard");
-  const [collapsed, setCollapsed] = useState(false);
   const navigate = useNavigate();
-
-  // Add state for confirmation modals
+  const location = useLocation();
   const [showFirstConfirmation, setShowFirstConfirmation] = useState(false);
   const [showFinalConfirmation, setShowFinalConfirmation] = useState(false);
   const [isLeaving, setIsLeaving] = useState(false);
 
-  // Adding the subNavbarRoutes feature from the second example
-  const subNavbarRoutes = [
-    "drives",
-    "settings",
-    "placement-groups",
-    "candidates",
-    "companies",
-  ];
-
-  useEffect(() => {
-    setActive(window.location.pathname.split("/")[1]);
-  }, []);
-
   const { getToken } = useAuth();
   const axios = ax(getToken);
 
-  const handleLeaveClick = () => {
-    setShowFirstConfirmation(true);
-  };
+  const canManageDrives =
+    user?.permissions?.includes("view_drive") ||
+    user?.permissions?.includes("manage_drive");
+  const canViewCandidates =
+    canManageDrives || user?.permissions?.includes("verify_candidate");
+  const canViewAnalytics =
+    user?.permissions?.includes("view_analytics") ||
+    user?.permissions?.includes("manage_institute");
+  const canManageInstitute = user?.permissions?.includes("manage_institute");
 
-  const handleFirstConfirmation = () => {
-    setShowFirstConfirmation(false);
-    setShowFinalConfirmation(true);
-  };
+  const navGroups = [
+    {
+      label: "Operations",
+      items: [
+        {
+          icon: LayoutDashboard,
+          label: "Dashboard",
+          link: "/dashboard",
+          visible: true,
+          match: "dashboard",
+        },
+        {
+          icon: BriefcaseBusiness,
+          label: "Drives",
+          link: "/drives",
+          visible: canManageDrives,
+          match: "drives",
+        },
+        {
+          icon: Users,
+          label: "Placement Groups",
+          link: "/placement-groups",
+          visible: canManageDrives,
+          match: "placement-groups",
+        },
+        {
+          icon: Building2,
+          label: "Companies",
+          link: "/companies",
+          visible: canManageDrives,
+          match: "companies",
+        },
+        {
+          icon: UserRoundCheck,
+          label: "Candidates",
+          link: "/candidates/active",
+          visible: canViewCandidates,
+          match: "candidates",
+        },
+      ],
+    },
+    {
+      label: "Insights",
+      items: [
+        {
+          icon: BarChart3,
+          label: "Analytics",
+          link: "/analytics",
+          visible: canViewAnalytics,
+          match: "analytics",
+        },
+        {
+          icon: Bell,
+          label: "Notifications",
+          link: "/notifications",
+          visible: true,
+          match: "notifications",
+          length: notifications,
+        },
+        {
+          icon: Settings,
+          label: "Settings",
+          link: "/settings/general",
+          visible: canManageInstitute,
+          match: "settings",
+        },
+      ],
+    },
+  ];
+
+  const activeSegment = location.pathname.split("/")[1] || "dashboard";
 
   const leaveInstitute = async () => {
     setIsLeaving(true);
@@ -191,212 +156,152 @@ const Sidebar = ({
 
   return (
     <>
-      <aside
-        className={`h-[100vh] bg-foreground text-background ${
-          subNavbarRoutes.includes(window.location.pathname.split("/")[1])
-            ? "border-r-background/10"
-            : "rounded-r-2xl"
-        } border-r flex flex-col overflow-hidden transition-all duration-300 
-          ${isMobile ? "w-64" : collapsed ? "w-16" : "w-64"}
-          ${isMobile ? "fixed left-0 top-0" : "relative"}`}
-      >
-        {/* Mobile Close Button */}
-        {isMobile && (
-          <Button
-            isIconOnly
-            variant="light"
-            className="absolute top-4 right-4"
-            onPress={onClose}
+      <aside className="flex h-screen w-[280px] flex-col border-r border-slate-200 bg-white">
+        <div className="flex h-16 items-center justify-between border-b border-slate-200 px-4">
+          <button
+            className="flex items-center gap-3 text-left"
+            onClick={() => navigate("/dashboard")}
           >
-            <X className="h-6 w-6" />
-          </Button>
-        )}
-
-        <nav className="flex flex-col gap-2 p-3">
-          {(!isMobile || !collapsed) && (
-            <div className={`${isMobile ? "mt-12" : "mt-4"} mb-6`}>
-              <img
-                src="/logo.svg"
-                alt="logo"
-                className="cursor-pointer h-10"
-                onClick={() => {
-                  window.location.href = "/";
-                }}
-              />
-            </div>
+            <img src="/logo.svg" alt="Scriptopia Campus" className="h-8" />
+          </button>
+          {isMobile && (
+            <Button isIconOnly variant="light" onPress={onClose} aria-label="Close navigation">
+              <X className="h-5 w-5" />
+            </Button>
           )}
+        </div>
 
-          {topItems.map((item, index) => (
-            <Tooltip
-              key={index}
-              content={item.label}
-              placement="right"
-              isDisabled={isMobile || !collapsed}
-            >
-              <div
-                className={`${!item.visible ? "hidden" : ""}`}
-                onClick={() => {
-                  navigate(item.link);
-                  setActive(item.label.toLowerCase());
-                  if (isMobile) onClose?.();
-                }}
-              >
-                <div
-                  className={`flex items-center p-2 py-3 rounded-lg cursor-pointer transition-colors duration-200  
-                    ${
-                      active?.toLowerCase() === item.label.toLowerCase()
-                        ? "bg-primary text-foreground"
-                        : "text-default hover:bg-accent/40"
-                    }`}
-                >
-                  <div className="min-w-[24px] flex items-center justify-center">
-                    <item.icon className="w-6 h-6" />
-                  </div>
-                  {(!collapsed || isMobile) && (
-                    <span className="ml-3 text-sm font-medium">
-                      {item.label}
-                    </span>
-                  )}
-                </div>
+        <div className="border-b border-slate-200 px-4 py-4">
+          <p className="truncate text-sm font-semibold text-slate-950">
+            {institute?.name || "Campus workspace"}
+          </p>
+          <p className="mt-1 truncate text-xs text-slate-500">
+            {user?.email || "Institute operations"}
+          </p>
+        </div>
+
+        <nav className="flex-1 space-y-6 overflow-y-auto px-3 py-4">
+          {navGroups.map((group) => (
+            <div key={group.label}>
+              <p className="px-3 text-xs font-semibold uppercase tracking-[0.16em] text-slate-400">
+                {group.label}
+              </p>
+              <div className="mt-2 space-y-1">
+                {group.items
+                  .filter((item) => item.visible)
+                  .map((item) => {
+                    const isActive = activeSegment === item.match;
+                    return (
+                      <button
+                        key={item.label}
+                        className={cn(
+                          "flex w-full items-center justify-between rounded-md px-3 py-2 text-sm font-medium transition",
+                          isActive
+                            ? "bg-slate-950 text-white shadow-sm"
+                            : "text-slate-600 hover:bg-slate-100 hover:text-slate-950"
+                        )}
+                        onClick={() => {
+                          navigate(item.link);
+                          onClose?.();
+                        }}
+                      >
+                        <span className="flex min-w-0 items-center gap-3">
+                          <item.icon className="h-4 w-4 shrink-0" />
+                          <span className="truncate">{item.label}</span>
+                        </span>
+                        {!!item.length && (
+                          <span className="ml-2 inline-flex min-w-5 items-center justify-center rounded-full bg-rose-500 px-1.5 py-0.5 text-[11px] font-semibold text-white">
+                            {item.length}
+                          </span>
+                        )}
+                      </button>
+                    );
+                  })}
               </div>
-            </Tooltip>
+            </div>
           ))}
         </nav>
 
-        <nav className="mt-auto flex flex-col gap-2 p-3">
-          <div className="ml-[6px] mb-4">
+        <div className="border-t border-slate-200 p-4">
+          <div className="mb-3 rounded-lg border border-slate-200 bg-slate-50 p-3">
+            <p className="text-xs font-medium text-slate-500">Current role</p>
+            <p className="mt-1 truncate text-sm font-semibold capitalize text-slate-950">
+              {user?.role || "Member"}
+            </p>
+          </div>
+          <div className="flex items-center justify-between">
             <UserButton>
               <UserButton.MenuItems>
                 <UserButton.Action
                   label="Leave Institute"
-                  labelIcon={<IconDoorExit className="text-zinc" size={16} />}
-                  onClick={handleLeaveClick}
+                  labelIcon={<LogOut className="h-4 w-4 text-rose-500" />}
+                  onClick={() => setShowFirstConfirmation(true)}
                 />
               </UserButton.MenuItems>
             </UserButton>
-          </div>
-
-          {bottomItems.map((item, index) => (
-            <Tooltip
-              key={index}
-              content={item.label}
-              placement="right"
-              isDisabled={isMobile || !collapsed}
+            <Button
+              size="sm"
+              variant="light"
+              color="danger"
+              onPress={() => setShowFirstConfirmation(true)}
             >
-              <div
-                className={`${!item.visible ? "hidden" : ""}`}
-                onClick={() => {
-                  navigate(item.link);
-                  setActive(item.label.toLowerCase());
-                  if (isMobile) onClose?.();
-                }}
-              >
-                <div
-                  className={`flex items-center p-2 py-3 rounded-xl cursor-pointer transition-colors duration-200   
-                    ${
-                      active?.toLowerCase() === item.label.toLowerCase()
-                        ? "bg-primary text-foreground"
-                        : "text-default hover:bg-accent/40"
-                    }`}
-                >
-                  <div className="min-w-[24px] flex items-center justify-center relative">
-                    <Badge
-                      content={item?.length}
-                      color="warning"
-                      className={!item?.length ? "hidden" : ""}
-                    >
-                      <item.icon className="w-5 h-5" />
-                    </Badge>
-                  </div>
-                  {(!collapsed || isMobile) && (
-                    <span className="ml-3 text-sm font-medium">
-                      {item.label}
-                    </span>
-                  )}
-                </div>
-              </div>
-            </Tooltip>
-          ))}
-
-          {/* Collapse Button */}
-          {!isMobile && (
-            <div className="flex w-full mt-4 px-2">
-              <button
-                onClick={() => setCollapsed(!collapsed)}
-                className="p-1 rounded-xl transition-colors duration-200 w-full"
-              >
-                <ChevronRight
-                  className={`h-5 w-5 transition-transform duration-200 text-background
-                    ${!collapsed ? "rotate-180" : ""}`}
-                />
-              </button>
-            </div>
-          )}
-        </nav>
+              Leave
+            </Button>
+          </div>
+        </div>
       </aside>
 
-      {/* First Confirmation Modal */}
       <Modal
         isOpen={showFirstConfirmation}
         onClose={() => setShowFirstConfirmation(false)}
-        backdrop="blur"
       >
         <ModalContent>
-          <ModalHeader className="flex flex-col gap-1">
-            Leave Institute
-          </ModalHeader>
+          <ModalHeader className="flex flex-col gap-1">Leave Institute</ModalHeader>
           <ModalBody>
-            <p>
-              Are you sure you want to leave this institute? You will lose
-              access to all resources associated with this institute.
+            <p className="text-sm leading-6 text-slate-600">
+              You will lose access to drives, candidates, company profiles, and
+              placement analytics for this institute.
             </p>
           </ModalBody>
           <ModalFooter>
-            <Button
-              variant="light"
-              onPress={() => setShowFirstConfirmation(false)}
-            >
+            <Button variant="light" onPress={() => setShowFirstConfirmation(false)}>
               Cancel
             </Button>
-            <Button color="danger" onPress={handleFirstConfirmation}>
+            <Button
+              color="danger"
+              onPress={() => {
+                setShowFirstConfirmation(false);
+                setShowFinalConfirmation(true);
+              }}
+            >
               Continue
             </Button>
           </ModalFooter>
         </ModalContent>
       </Modal>
 
-      {/* Final Confirmation Modal */}
       <Modal
         isOpen={showFinalConfirmation}
         onClose={() => setShowFinalConfirmation(false)}
-        backdrop="blur"
       >
         <ModalContent>
-          <ModalHeader className="flex flex-col gap-1">
-            Final Confirmation
-          </ModalHeader>
+          <ModalHeader className="flex flex-col gap-1">Final Confirmation</ModalHeader>
           <ModalBody>
-            <p>
-              This action cannot be undone. You will need to be invited again to
+            <p className="text-sm leading-6 text-slate-600">
+              This action cannot be undone. You will need a new invitation to
               rejoin this institute.
-            </p>
-            <p className="font-semibold mt-2">
-              Are you absolutely sure you want to proceed?
             </p>
           </ModalBody>
           <ModalFooter>
             <Button
               variant="light"
               onPress={() => setShowFinalConfirmation(false)}
+              isDisabled={isLeaving}
             >
               Cancel
             </Button>
-            <Button
-              color="danger"
-              onPress={leaveInstitute}
-              isLoading={isLeaving}
-            >
-              {isLeaving ? "Leaving..." : "Leave Institute"}
+            <Button color="danger" onPress={leaveInstitute} isLoading={isLeaving}>
+              Leave Institute
             </Button>
           </ModalFooter>
         </ModalContent>

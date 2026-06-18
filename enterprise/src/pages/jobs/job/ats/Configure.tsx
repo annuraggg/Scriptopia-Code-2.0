@@ -1,5 +1,5 @@
 import ax from "@/config/axios";
-import { useAuth } from "@clerk/clerk-react";
+import { useAuth } from "@/auth";
 import { Input, Textarea } from "@heroui/input";
 import { Button } from "@heroui/button";
 import { useState } from "react";

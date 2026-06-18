@@ -23,7 +23,7 @@ import {
   parseAbsoluteToLocal,
 } from "@internationalized/date";
 import Languages from "./Languages";
-import { useAuth } from "@clerk/clerk-react";
+import { useAuth } from "@/auth";
 import ax from "@/config/axios";
 import { toast } from "sonner";
 import { Problem as VanillaProblem } from "@shared-types/Problem";

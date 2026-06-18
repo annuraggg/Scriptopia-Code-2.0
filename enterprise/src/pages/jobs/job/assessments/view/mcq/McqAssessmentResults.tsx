@@ -1,7 +1,7 @@
 import { Tabs, Tab } from "@heroui/tabs";
 import Analytics from "./Analytics";
 import McqAssessmentResultsTable from "./MCQResultsTable";
-import { useAuth } from "@clerk/clerk-react";
+import { useAuth } from "@/auth";
 import ax from "@/config/axios";
 import { useEffect, useState } from "react";
 import { MCQAssessment } from "@shared-types/MCQAssessment";

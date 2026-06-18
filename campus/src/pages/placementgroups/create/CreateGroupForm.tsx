@@ -1,8 +1,8 @@
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import { ChevronRight } from "lucide-react";
 import GroupDetailsTab from "./Details";
 import CandidatesTab from "./Candidates";
-import { useAuth } from "@clerk/clerk-react";
+import { useAuth } from "@/auth";
 import ax from "@/config/axios";
 import { toast } from "sonner";
 import { useNavigate } from "react-router-dom";
@@ -57,6 +57,10 @@ const CreateGroupForm: React.FC = () => {
       })
       .finally(() => setLoading(false));
   };
+
+  useEffect(() => {
+    console.log(selectedDepartments, "selectedDepartments");
+  }, [selectedDepartments]);
 
   return (
     <div className="flex gap-5 h-full p-5 py-10">

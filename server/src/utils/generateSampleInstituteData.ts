@@ -1,6 +1,6 @@
 import { faker } from "@faker-js/faker";
 import Institute from "@/models/Institute";
-import clerkClient from "@/config/clerk";
+import userDirectory from "@/services/userDirectory";
 import { generate } from "generate-passphrase";
 import User from "@/models/User";
 import Candidate from "@/models/Candidate";
@@ -106,14 +106,12 @@ const generateSampleInstituteCandidates = async (instituteId: string) => {
   );
 
   for (const candidate of candidates) {
-    await clerkClient.users.createUser({
+    await userDirectory.users.createUser({
       skipPasswordChecks: true,
       firstName: candidate.firstName,
       lastName: candidate.lastName,
       password: passphrase,
       emailAddress: [candidate.email],
-      username: candidate.username,
-      legalAcceptedAt: new Date(),
       privateMetadata: { isSample: true, sampleInstituteId: instituteId },
     });
 
@@ -128,11 +126,11 @@ const generateSampleInstituteCandidates = async (instituteId: string) => {
   console.log("DB Users", dbUsers);
 
   for (const user of dbUsers) {
-    const clerkUser = await clerkClient.users.getUser(user.clerkId);
+    const accountUser = await userDirectory.users.getUser(user._id.toString());
 
     const newCandidate = new Candidate({
       userId: user._id,
-      name: `${clerkUser.firstName} ${clerkUser.lastName}`,
+      name: `${accountUser.firstName} ${accountUser.lastName}`,
       dob: faker.date.birthdate({ min: 18, max: 30, mode: "age" }),
       gender: faker.helpers.arrayElement(["Male", "Female", "Other"]),
       email: user.email,

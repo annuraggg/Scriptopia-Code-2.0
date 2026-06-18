@@ -19,9 +19,19 @@ import ErrorBoundary from "./components/ErrorBoundary";
 import { Suspense } from "react";
 import Loader from "./components/Loader";
 import Notifications from "./pages/notifications/Notifications";
+import { AuthPage } from "@/auth";
+import Settings from "./pages/settings/Settings";
 
 function App() {
   const router = createBrowserRouter([
+    {
+      path: "/auth/login",
+      element: <AuthPage />,
+    },
+    {
+      path: "/auth/register",
+      element: <AuthPage />,
+    },
     {
       path: "/",
       errorElement: <ErrorBoundary />,
@@ -67,6 +77,10 @@ function App() {
                   <Notifications />
                 </Suspense>
               ),
+            },
+            {
+              path: "account",
+              element: <Settings />,
             },
             {
               path: "profile",

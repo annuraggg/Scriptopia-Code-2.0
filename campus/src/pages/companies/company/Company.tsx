@@ -15,7 +15,7 @@ import {
 import { MoreVertical } from "lucide-react";
 import { motion } from "framer-motion";
 import Filter from "./Filter";
-import { useAuth } from "@clerk/clerk-react";
+import { useAuth } from "@/auth";
 import ax from "@/config/axios";
 import { CompanyTable } from "./CompanyTable";
 import { Company as ICompany } from "@shared-types/Company";

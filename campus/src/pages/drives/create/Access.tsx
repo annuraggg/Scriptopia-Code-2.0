@@ -2,7 +2,7 @@ import { Button, Card, Radio, RadioGroup } from "@nextui-org/react";
 import { PlacementGroup } from "@shared-types/PlacementGroup";
 import { ChevronLeft, ChevronRight } from "lucide-react";
 import { Dispatch, SetStateAction, useEffect, useState } from "react";
-import { useAuth } from "@clerk/clerk-react";
+import { useAuth } from "@/auth";
 import ax from "@/config/axios";
 
 interface AccessProps {
@@ -61,7 +61,7 @@ const Access = ({
         ) : (
           <RadioGroup value={selectedGroup} onValueChange={onSelectGroup}>
             <div className="space-y-2">
-              {loadedGroups.map((group) => (
+              {loadedGroups?.map((group) => (
                 <Card key={group._id} className="p-4">
                   <div className="flex justify-between items-center">
                     <div>

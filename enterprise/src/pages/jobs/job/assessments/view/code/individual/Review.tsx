@@ -11,7 +11,7 @@ import { Pagination } from "@heroui/pagination";
 import { ExtendedMCQAssessmentSubmission } from "@shared-types/ExtendedMCQAssessmentSubmission";
 import { useEffect, useState } from "react";
 import { NumberInput } from "@heroui/number-input";
-import { useAuth } from "@clerk/clerk-react";
+import { useAuth } from "@/auth";
 import ax from "@/config/axios";
 import { toast } from "sonner";
 

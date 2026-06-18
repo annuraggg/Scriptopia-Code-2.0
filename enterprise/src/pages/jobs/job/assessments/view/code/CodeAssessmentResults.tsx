@@ -2,7 +2,7 @@ import React, { useEffect, useState } from "react";
 import { Tabs, Tab } from "@heroui/tabs";
 import { CodeAssessment } from "@shared-types/CodeAssessment";
 import { CodeAssessmentSubmission } from "@shared-types/CodeAssessmentSubmission";
-import { useAuth } from "@clerk/clerk-react";
+import { useAuth } from "@/auth";
 import ax from "@/config/axios";
 import { toast } from "sonner";
 import Loader from "@/components/Loader";

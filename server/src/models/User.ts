@@ -18,8 +18,38 @@ const WalletSchema = new mongoose.Schema({
 
 const userSchema = new mongoose.Schema(
   {
-    clerkId: { type: String, required: true },
-    email: { type: String, required: true },
+    email: { type: String, required: true, unique: true, lowercase: true, trim: true },
+    passwordHash: { type: String, select: false },
+    firstName: { type: String, default: "" },
+    lastName: { type: String, default: "" },
+    name: { type: String, default: "" },
+    imageUrl: { type: String, default: "" },
+    lastLoginAt: { type: Date },
+    sessions: {
+      type: [
+        {
+          id: { type: String, required: true },
+          userAgent: { type: String, default: "" },
+          ipAddress: { type: String, default: "" },
+          createdAt: { type: Date, default: Date.now },
+          lastSeenAt: { type: Date, default: Date.now },
+        },
+      ],
+      default: [],
+    },
+    loginHistory: {
+      type: [
+        {
+          at: { type: Date, default: Date.now },
+          ipAddress: { type: String, default: "" },
+          userAgent: { type: String, default: "" },
+          status: { type: String, default: "success" },
+        },
+      ],
+      default: [],
+    },
+    resetToken: { type: String, select: false },
+    resetTokenExpiresAt: { type: Date, select: false },
     streak: { type: [Date] },
     wallet: { type: WalletSchema, default: null },
 
@@ -29,6 +59,6 @@ const userSchema = new mongoose.Schema(
   { timestamps: true }
 );
 
-userSchema.plugin(softDeletePlugin)
+userSchema.plugin(softDeletePlugin);
 const User = mongoose.model("User", userSchema);
 export default User;

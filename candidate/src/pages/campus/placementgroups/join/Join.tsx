@@ -4,7 +4,7 @@ import { Card, CardBody, Button } from "@heroui/react";
 import { motion } from "framer-motion";
 import Loader from "@/components/Loader";
 import { PlacementGroup } from "@shared-types/PlacementGroup";
-import { useAuth } from "@clerk/clerk-react";
+import { useAuth } from "@/auth";
 import ax from "@/config/axios";
 import { toast } from "sonner";
 // Main Component

@@ -1,9 +1,9 @@
-import { UserButton } from "@clerk/clerk-react";
+import { UserButton } from "@/auth";
 import { useTheme } from './theme-provider';
 import { Button } from "@heroui/react";
 import { Moon, Sun } from 'lucide-react';
 import Wallet from './Wallet';
-import { useAuth } from "@clerk/clerk-react";
+import { useAuth } from "@/auth";
 
 const Navbar = ({ refetch }: { refetch: boolean }) => {
   const { userId } = useAuth();

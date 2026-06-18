@@ -14,8 +14,11 @@ interface Wallet {
 }
 interface User {
   _id?: string;
-  clerkId: string;
   email: string;
+  firstName?: string;
+  lastName?: string;
+  name?: string;
+  imageUrl?: string;
   streak?: Date[];
   wallet: Wallet;
   createdAt?: Date;

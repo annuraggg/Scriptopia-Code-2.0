@@ -15,7 +15,7 @@ import {
 import { AlertCircle, CalendarDays, Users, CheckCircle2 } from "lucide-react";
 import { motion } from "framer-motion";
 import Loader from "@/components/Loader";
-import { useAuth } from "@clerk/clerk-react";
+import { useAuth } from "@/auth";
 import ax from "@/config/axios";
 import { toast } from "sonner";
 import { RootContext } from "@/types/RootContext";

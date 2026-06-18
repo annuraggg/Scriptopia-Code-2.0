@@ -2,7 +2,7 @@
 import ViewUserAssessmentTop from "./ViewUserAssessmentTop";
 import ViewUserAssessmentBottom from "./ViewUserAssessmentBottom";
 import { motion } from "framer-motion";
-import { useAuth } from "@clerk/clerk-react";
+import { useAuth } from "@/auth";
 import ax from "@/config/axios";
 import { useEffect, useState } from "react";
 import { Assessment } from "@shared-types/Assessment";

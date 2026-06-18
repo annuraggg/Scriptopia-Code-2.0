@@ -4,6 +4,7 @@ import "./App.css";
 import Layout from "./components/Layout";
 import ErrorPage from "./components/ErrorPage";
 import Loader from "./components/Loader"; // Import Loader component
+import { AuthPage } from "@/auth";
 // Lazy loading components
 const Home = lazy(() => import("./pages/home/Home"));
 const AssessmentDashboard = lazy(
@@ -45,6 +46,14 @@ const ViewCodeUserAssessment = lazy(
 );
 
 const router = createBrowserRouter([
+  {
+    path: "/auth/login",
+    element: <AuthPage />,
+  },
+  {
+    path: "/auth/register",
+    element: <AuthPage />,
+  },
   {
     path: "/under-construction",
     element: <UnderConstruction />,

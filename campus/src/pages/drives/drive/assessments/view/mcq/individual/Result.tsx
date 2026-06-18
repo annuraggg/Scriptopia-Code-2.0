@@ -2,7 +2,7 @@ import React, { useState } from "react";
 import { ExtendedMCQAssessmentSubmission } from "@shared-types/ExtendedMCQAssessmentSubmission";
 import { CheckCircle, XCircle, User, Mail } from "lucide-react";
 import { Option } from "@shared-types/MCQAssessment";
-import { useAuth } from "@clerk/clerk-react";
+import { useAuth } from "@/auth";
 import ax from "@/config/axios";
 import { toast } from "sonner";
 import { NumberInput } from "@heroui/number-input";

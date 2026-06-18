@@ -4,7 +4,7 @@ import {
   SignedIn,
   SignedOut,
   useAuth,
-} from "@clerk/clerk-react";
+} from "@/auth";
 import { useEffect, useState } from "react";
 import ax from "@/config/axios";
 import { toast } from "sonner";

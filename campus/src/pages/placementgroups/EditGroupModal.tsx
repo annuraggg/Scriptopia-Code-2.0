@@ -14,7 +14,7 @@ import {
 import { PlacementGroup } from "@shared-types/PlacementGroup";
 import { Department } from "@shared-types/Institute";
 import { Candidate as CandidateType } from "@shared-types/Candidate";
-import { useAuth } from "@clerk/clerk-react";
+import { useAuth } from "@/auth";
 import ax from "@/config/axios";
 import { toast } from "sonner";
 interface EditGroupModalProps {

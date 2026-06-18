@@ -1,5 +1,5 @@
 import CandidateNavbar from "@/components/CandidateNavbar";
-import { RedirectToSignIn, SignedIn, SignedOut } from "@clerk/clerk-react";
+import { RedirectToSignIn, SignedIn, SignedOut } from "@/auth";
 import { Organization } from "@shared-types/Organization";
 import { Posting } from "@shared-types/Posting";
 import { useEffect, useState } from "react";

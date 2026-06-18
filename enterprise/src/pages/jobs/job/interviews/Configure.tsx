@@ -1,4 +1,4 @@
-import { useAuth } from "@clerk/clerk-react";
+import { useAuth } from "@/auth";
 import { Divider } from "@heroui/divider";
 import { Button } from "@heroui/button";
 import { Checkbox } from "@heroui/checkbox";

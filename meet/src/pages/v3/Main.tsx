@@ -11,7 +11,7 @@ import Lobby from "./Lobby";
 import Meet from "./call/Meet";
 import { toast } from "sonner";
 import Waiting from "./Waiting";
-import { useAuth } from "@clerk/clerk-react";
+import { useAuth } from "@/auth";
 import ax from "@/config/axios";
 import Loading from "./Loading";
 import { io, Socket } from "socket.io-client";

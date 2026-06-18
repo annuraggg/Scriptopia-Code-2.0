@@ -15,7 +15,7 @@ import AppliedDrive from "@/models/AppliedDrive";
 import DriveModel from "@/models/Drive";
 import Institute from "@/models/Institute";
 import Drive from "@/models/Drive";
-import clerkClient from "@/config/clerk";
+import userDirectory from "@/services/userDirectory";
 import PlacementGroup from "@/models/PlacementGroup";
 import mongoose from "mongoose";
 import getCampusUsersWithPermission from "@/utils/getUserWithPermission";
@@ -292,20 +292,20 @@ const createCandidate = async (c: Context) => {
       return sendError(c, 409, "Candidate profile already exists");
     }
 
-    // Fetch user data from Clerk
-    let clerkUser;
+    // Fetch user data from identity provider
+    let accountUser;
     try {
-      clerkUser = await clerkClient.users.getUser(auth.userId);
-    } catch (clerkError) {
+      accountUser = await userDirectory.users.getUser(auth.userId);
+    } catch (identityProviderError) {
       logger.error(
-        `Clerk API error: ${
-          clerkError instanceof Error ? clerkError.message : String(clerkError)
+        `identity provider API error: ${
+          identityProviderError instanceof Error ? identityProviderError.message : String(identityProviderError)
         }`
       );
       return sendError(c, 500, "Unable to verify user information");
     }
 
-    if (!clerkUser) {
+    if (!accountUser) {
       return sendError(c, 404, "User not found in authentication provider");
     }
 
@@ -323,7 +323,7 @@ const createCandidate = async (c: Context) => {
     // Create new candidate with sanitized data
     const newCandidate = new Candidate({
       ...sanitizedData,
-      name: clerkUser.fullName,
+      name: accountUser.fullName,
       userId: auth._id,
     });
 

@@ -1,47 +1,55 @@
-import { useNavigate } from "react-router-dom";
-import { motion, AnimatePresence } from "framer-motion";
-import { useState, useMemo, useEffect } from "react";
+import { useNavigate, useOutletContext } from "react-router-dom";
+import { useEffect, useMemo, useState } from "react";
 import {
-  Card,
-  Input,
   Button,
+  Dropdown,
+  DropdownItem,
+  DropdownMenu,
+  DropdownTrigger,
+  Input,
+  Modal,
+  ModalBody,
+  ModalContent,
+  ModalFooter,
+  ModalHeader,
+  Pagination,
   Select,
   SelectItem,
-  Dropdown,
-  DropdownTrigger,
-  DropdownMenu,
-  DropdownItem,
-  Modal,
-  ModalContent,
-  ModalHeader,
-  ModalBody,
-  ModalFooter,
+  Spinner,
   useDisclosure,
-  Pagination,
 } from "@nextui-org/react";
-import { Search, Plus, MoreVertical, Copy, Trash } from "lucide-react";
-import { useAuth } from "@clerk/clerk-react";
+import {
+  Archive,
+  Copy,
+  GraduationCap,
+  MoreVertical,
+  Plus,
+  Search,
+  Trash,
+  Users,
+} from "lucide-react";
+import { useAuth } from "@/auth";
 import ax from "@/config/axios";
-import Filter from "./Filter";
 import { PlacementGroup } from "@shared-types/PlacementGroup";
 import { Department } from "@shared-types/Institute";
 import EditGroupModal from "./EditGroupModal";
-import { useOutletContext } from "react-router-dom";
 import { RootContext } from "@/types/RootContext";
 import { toast } from "sonner";
+import { PageShell } from "@/components/campus/PageShell";
+import { MetricCard } from "@/components/campus/MetricCard";
+import { StatusPill } from "@/components/campus/StatusPill";
+import { EmptyState } from "@/components/campus/EmptyState";
 
 const PlacementGroups = () => {
   const { institute } = useOutletContext<RootContext>();
   const [groups, setGroups] = useState<PlacementGroup[]>([]);
-  const [instituteDepartments, setInstituteDepartments] = useState<
-    Department[]
-  >([]);
+  const [instituteDepartments, setInstituteDepartments] = useState<Department[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const navigate = useNavigate();
-  const [sort, setSort] = useState<string>("newest");
-  const [searchTerm, setSearchTerm] = useState<string>("");
-  const [filter] = useState<"all" | "active" | "archived">("all");
+  const [sort, setSort] = useState("newest");
+  const [searchTerm, setSearchTerm] = useState("");
+  const [statusFilter, setStatusFilter] = useState("all");
   const [activeFilters, setActiveFilters] = useState<{
     year: string;
     departments: string[];
@@ -51,14 +59,7 @@ const PlacementGroups = () => {
   });
   const [editGroup, setEditGroup] = useState<PlacementGroup | null>(null);
   const [deleteGroup, setDeleteGroup] = useState<PlacementGroup | null>(null);
-
-  // New pagination state
-  const [pagination, setPagination] = useState<{
-    total: number;
-    page: number;
-    pages: number;
-    limit: number;
-  }>({
+  const [pagination, setPagination] = useState({
     total: 0,
     page: 1,
     pages: 1,
@@ -80,52 +81,28 @@ const PlacementGroups = () => {
       setIsLoading(true);
       setError(null);
 
-      // Added pagination parameters to the API call
       const response = await axios.get(
         `/placement-groups?page=${page}&limit=${pagination.limit}`
       );
-      console.log("API Response:", response.data);
 
-      if (response.data && response.data.success) {
-        // Updated to extract groups from the new data structure
-        if (
-          response.data.data &&
-          response.data.data.groups &&
-          Array.isArray(response.data.data.groups)
-        ) {
-          console.log("Placement Groups:", response.data.data.groups);
+      if (response.data?.success) {
+        if (Array.isArray(response.data.data?.groups)) {
           setGroups(response.data.data.groups);
-
-          // Store pagination info
           if (response.data.data.pagination) {
             setPagination(response.data.data.pagination);
           }
         } else {
-          console.error(
-            "Unexpected response structure for placementGroups:",
-            response.data
-          );
           setError("Unexpected data format from API");
         }
 
-        if (
-          response.data.data &&
-          Array.isArray(response.data.data.departments)
-        ) {
-          console.log("Departments:", response.data.data.departments);
+        if (Array.isArray(response.data.data?.departments)) {
           setInstituteDepartments(response.data.data.departments);
-        } else {
-          console.error(
-            "Unexpected response structure for departments:",
-            response.data
-          );
         }
       } else {
-        console.error("API returned error:", response.data);
-        setError("Failed to fetch data");
+        setError("Failed to fetch placement groups");
       }
-    } catch (error) {
-      console.error("Error fetching groups:", error);
+    } catch (err) {
+      console.error("Error fetching groups:", err);
       setError("Error connecting to server");
     } finally {
       setIsLoading(false);
@@ -136,107 +113,78 @@ const PlacementGroups = () => {
     fetchGroups();
   }, []);
 
-  const handlePageChange = (page: number) => {
-    fetchGroups(page);
-  };
+  const availableYears = useMemo(() => {
+    const years = new Set<string>();
+    groups.forEach((group) => {
+      if (group.academicYear?.start && group.academicYear?.end) {
+        years.add(`${group.academicYear.start}-${group.academicYear.end}`);
+      }
+    });
+    return Array.from(years).sort().reverse();
+  }, [groups]);
 
   const filteredGroups = useMemo(() => {
     return (groups || [])
       .filter((group) => {
         const groupName = group.name || "";
-        if (
-          searchTerm &&
-          !groupName.toLowerCase().includes(searchTerm.toLowerCase())
-        ) {
-          return false;
-        }
-
+        const matchesSearch =
+          !searchTerm ||
+          groupName.toLowerCase().includes(searchTerm.toLowerCase());
         const isArchived = !!group.archived;
-        if (filter === "active" && isArchived) return false;
-        if (filter === "archived" && !isArchived) return false;
-
-        if (activeFilters.year) {
-          const yearString = `${group.academicYear.start || ""}-${
-            group.academicYear.end || ""
-          }`;
-          if (!yearString.includes(activeFilters.year)) {
-            return false;
-          }
-        }
-
-        if (activeFilters.departments.length > 0) {
-          const groupDepts = Array.isArray(group.departments)
-            ? group.departments
-            : [];
-          const hasMatchingDepartment = activeFilters.departments.some(
-            (deptId) => groupDepts.includes(deptId)
+        const matchesStatus =
+          statusFilter === "all" ||
+          (statusFilter === "active" && !isArchived) ||
+          (statusFilter === "archived" && isArchived);
+        const yearString = `${group.academicYear?.start || ""}-${
+          group.academicYear?.end || ""
+        }`;
+        const matchesYear =
+          !activeFilters.year || yearString === activeFilters.year;
+        const groupDepartments = Array.isArray(group.departments)
+          ? group.departments
+          : [];
+        const matchesDepartment =
+          activeFilters.departments.length === 0 ||
+          activeFilters.departments.some((deptId) =>
+            groupDepartments.includes(deptId)
           );
-          if (!hasMatchingDepartment) return false;
-        }
 
-        return true;
+        return matchesSearch && matchesStatus && matchesYear && matchesDepartment;
       })
-      .sort((a, b) => {
-        try {
-          if (sort === "newest") {
-            return (
-              new Date(b?.createdAt || Date.now()).getTime() -
-              new Date(a?.createdAt || Date.now()).getTime()
-            );
-          }
-          return (
-            new Date(a?.createdAt || Date.now()).getTime() -
+      .sort((a, b) =>
+        sort === "newest"
+          ? new Date(b?.createdAt || Date.now()).getTime() -
+            new Date(a?.createdAt || Date.now()).getTime()
+          : new Date(a?.createdAt || Date.now()).getTime() -
             new Date(b?.createdAt || Date.now()).getTime()
-          );
-        } catch (error) {
-          console.error("Error sorting groups:", error);
-          return 0;
-        }
-      });
-  }, [groups, searchTerm, filter, activeFilters, sort]);
+      );
+  }, [activeFilters, groups, searchTerm, sort, statusFilter]);
 
-  const handleFilterChange = (newFilters: {
-    year: string;
-    departments: string[];
-  }) => {
-    setActiveFilters(newFilters);
-  };
+  const activeGroups = groups.filter((group) => !group.archived);
+  const hasFilters =
+    searchTerm ||
+    statusFilter !== "all" ||
+    activeFilters.year ||
+    activeFilters.departments.length;
 
-  const handleClearFilters = () => {
-    setActiveFilters({ year: "", departments: [] });
-  };
-
-  const handleCopyLink = (id: string, e: React.MouseEvent) => {
-    e.stopPropagation();
+  const handleCopyLink = (id: string) => {
     navigator.clipboard.writeText(`https://scriptopiacampus.com/group/${id}`);
+    toast.success("Placement group link copied");
   };
 
-  const handleArchive = async (id: string, e: React.MouseEvent) => {
-    e.stopPropagation();
+  const handleArchive = async (id: string) => {
     try {
-      const response = await axios.post("/placementgroups/archive", { id });
-
-      console.log("Archive response:", response.data);
-
-      if (
-        response.data &&
-        (response.data.status === 200 || response.data.status === 201)
-      ) {
-        setGroups((prevGroups) =>
-          prevGroups.map((group) =>
-            group._id === id ? { ...group, archived: !group.archived } : group
-          )
-        );
-      }
-    } catch (error) {
-      console.error("Error archiving group:", error);
+      await axios.post("/placementgroups/archive", { id });
+      setGroups((prevGroups) =>
+        prevGroups.map((group) =>
+          group._id === id ? { ...group, archived: !group.archived } : group
+        )
+      );
+      toast.success("Placement group updated");
+    } catch (err) {
+      console.error("Error archiving group:", err);
+      toast.error("Failed to update placement group");
     }
-  };
-
-  const handleDeleteClick = (group: PlacementGroup, e: React.MouseEvent) => {
-    e.stopPropagation();
-    setDeleteGroup(group);
-    openDeleteModal();
   };
 
   const handleDeleteConfirm = () => {
@@ -249,17 +197,12 @@ const PlacementGroups = () => {
         closeDeleteModal();
         setDeleteGroup(null);
         toast.success("Placement group deleted successfully");
-
         setGroups((prevGroups) =>
           prevGroups.filter((group) => group._id !== deleteGroup._id)
         );
-
-        setTimeout(() => {
-          fetchGroups(pagination.page);
-        }, 300);
+        setTimeout(() => fetchGroups(pagination.page), 300);
       })
       .catch((error) => {
-        console.error("Error deleting group:", error);
         const errorMessage =
           error.response?.data?.message ||
           "Failed to delete placement group. Please try again.";
@@ -271,311 +214,322 @@ const PlacementGroups = () => {
           );
           closeDeleteModal();
           setDeleteGroup(null);
-          setTimeout(() => {
-            fetchGroups(pagination.page);
-          }, 300);
+          setTimeout(() => fetchGroups(pagination.page), 300);
         } else {
           toast.error(errorMessage);
         }
       })
-      .finally(() => {
-        setIsDeleting(false);
-      });
+      .finally(() => setIsDeleting(false));
   };
 
-  const renderPlacementGroups = () => {
-    if (isLoading) {
-      return (
-        <div className="flex justify-center items-center h-64">
-          <div className="text-xl text-gray-500">Loading groups...</div>
-        </div>
-      );
-    }
-
-    if (error) {
-      return (
-        <div className="bg-danger-50 dark:bg-danger-900 rounded-lg p-8 text-center">
-          <h3 className="text-lg font-medium text-danger-700 dark:text-danger-300 mb-2">
-            Error loading placement groups
-          </h3>
-          <p className="text-danger-500 dark:text-danger-400 mb-6">{error}</p>
-          <Button color="primary" onClick={() => fetchGroups()}>
-            Retry
-          </Button>
-        </div>
-      );
-    }
-
-    if (filteredGroups.length === 0) {
-      return (
-        <div className="bg-gray-50 dark:bg-gray-800 rounded-lg p-8 text-center">
-          <h3 className="text-lg font-medium text-gray-700 dark:text-gray-300 mb-2">
-            No placement groups found
-          </h3>
-          <p className="text-gray-500 dark:text-gray-400 mb-6">
-            {searchTerm ||
-            activeFilters.year ||
-            activeFilters.departments.length > 0
-              ? "Try adjusting your search or filters"
-              : "Create your first placement group to get started"}
-          </p>
-          <Button
-            color="primary"
-            startContent={<Plus size={18} />}
-            onClick={() => navigate("create")}
-          >
-            Create New Group
-          </Button>
-        </div>
-      );
-    }
-
-    return (
-      <>
-        <div className="space-y-4">
-          {filteredGroups.map((group) => (
-            <Card
-              key={group._id}
-              className="p-4 cursor-pointer w-full hover:shadow-md transition-shadow"
-              isPressable
-              onClick={() => navigate(`/placement-groups/${group._id}`)}
-            >
-              <div className="flex justify-between items-start">
-                <div>
-                  <div className="flex items-center gap-2 mb-2">
-                    <h3 className="text-lg font-semibold">{group.name}</h3>
-                    <span
-                      className={`px-2 py-1 rounded-full text-xs ${
-                        group.archived
-                          ? "bg-default-100 text-default-600"
-                          : "bg-success-100 text-success-600"
-                      }`}
-                    >
-                      {group.archived ? "Archived" : "Active"}
-                    </span>
-                  </div>
-
-                  <div className="flex items-center gap-4 text-sm text-default-500 mb-4">
-                    <span>
-                      {group.academicYear.start} - {group.academicYear.end}
-                    </span>
-                    <span>
-                      Created:{" "}
-                      {new Date(group?.createdAt!).toLocaleDateString()}
-                    </span>
-                  </div>
-
-                  <div className="flex flex-wrap gap-2">
-                    {Array.isArray(group.departments) &&
-                      group.departments.map((deptId) => {
-                        const dept = instituteDepartments.find(
-                          (d) => d._id === deptId
-                        );
-                        return (
-                          <span
-                            key={deptId}
-                            className="px-2 py-1 bg-default-100 rounded-full text-xs"
-                          >
-                            {dept?.name || deptId}
-                          </span>
-                        );
-                      })}
-                  </div>
-                </div>
-
-                <div className="flex gap-2">
-                  <Button
-                    isIconOnly
-                    variant="flat"
-                    onClick={(e) => handleCopyLink(group._id!, e)}
-                  >
-                    <Copy size={18} />
-                  </Button>
-                  <Dropdown>
-                    <DropdownTrigger>
-                      <Button isIconOnly variant="flat">
-                        <MoreVertical size={18} />
-                      </Button>
-                    </DropdownTrigger>
-                    <DropdownMenu
-                      onAction={(key) => {
-                        if (key === "archive") {
-                          handleArchive(group._id!, {
-                            stopPropagation: () => {},
-                          } as React.MouseEvent);
-                        } else if (key === "edit") {
-                          setEditGroup(group);
-                        } else if (key === "delete") {
-                          handleDeleteClick(group, {
-                            stopPropagation: () => {},
-                          } as React.MouseEvent);
-                        }
-                      }}
-                    >
-                      <DropdownItem key="edit">Edit</DropdownItem>
-                      <DropdownItem
-                        key="delete"
-                        className="text-danger"
-                        color="danger"
-                        startContent={<Trash size={18} />}
-                      >
-                        Delete
-                      </DropdownItem>
-                    </DropdownMenu>
-                  </Dropdown>
-                </div>
-              </div>
-            </Card>
-          ))}
-        </div>
-
-        {/* Pagination component */}
-        {pagination.pages > 1 && (
-          <div className="flex justify-center mt-6">
-            <Pagination
-              total={pagination.pages}
-              initialPage={pagination.page}
-              page={pagination.page}
-              onChange={handlePageChange}
-              showControls
-              showShadow
-            />
-          </div>
-        )}
-      </>
-    );
+  const clearFilters = () => {
+    setSearchTerm("");
+    setSort("newest");
+    setStatusFilter("all");
+    setActiveFilters({ year: "", departments: [] });
   };
 
   return (
-    <div className="p-6 h-full">
-      <AnimatePresence mode="wait">
-        <motion.div
-          key="groups-list"
-          initial={{ opacity: 0, x: -20 }}
-          animate={{ opacity: 1, x: 0 }}
-          exit={{ opacity: 0, x: 20 }}
-          transition={{ duration: 0.3 }}
-          className="w-full"
+    <PageShell
+      eyebrow="Student segmentation"
+      title="Placement groups"
+      description="Build eligible student cohorts by academic year and department, then reuse them across drives and invitation flows."
+      actions={
+        <Button
+          color="primary"
+          startContent={<Plus size={16} />}
+          onPress={() => navigate("create")}
         >
-          <div className="flex justify-between items-center mb-8">
-            <h1 className="text-2xl font-bold">Student Placement Groups</h1>
-            <Button
-              color="primary"
-              startContent={<Plus size={20} />}
-              onClick={() => navigate("create")}
-            >
-              Create New Group
-            </Button>
+          Create group
+        </Button>
+      }
+    >
+      <section className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
+        <MetricCard
+          label="Groups"
+          value={pagination.total || groups.length}
+          detail="Total cohorts"
+          icon={<Users className="h-4 w-4" />}
+        />
+        <MetricCard
+          label="Active"
+          value={activeGroups.length}
+          detail="Available for drives"
+          icon={<GraduationCap className="h-4 w-4" />}
+          tone="green"
+        />
+        <MetricCard
+          label="Archived"
+          value={groups.length - activeGroups.length}
+          detail="Hidden from default planning"
+          icon={<Archive className="h-4 w-4" />}
+          tone="amber"
+        />
+        <MetricCard
+          label="Departments"
+          value={instituteDepartments.length}
+          detail="Usable as segmentation criteria"
+          icon={<GraduationCap className="h-4 w-4" />}
+          tone="blue"
+        />
+      </section>
+
+      <section className="campus-toolbar">
+        <div className="flex flex-1 flex-col gap-3 lg:flex-row lg:items-center">
+          <Input
+            aria-label="Search placement groups"
+            className="lg:max-w-sm"
+            placeholder="Search groups"
+            value={searchTerm}
+            onChange={(event) => setSearchTerm(event.target.value)}
+            startContent={<Search size={18} className="text-slate-400" />}
+          />
+          <Select
+            aria-label="Status"
+            className="lg:max-w-[150px]"
+            selectedKeys={[statusFilter]}
+            onChange={(event) => setStatusFilter(event.target.value)}
+          >
+            <SelectItem key="all">All status</SelectItem>
+            <SelectItem key="active">Active</SelectItem>
+            <SelectItem key="archived">Archived</SelectItem>
+          </Select>
+          <Select
+            aria-label="Academic year"
+            className="lg:max-w-[180px]"
+            placeholder="Academic year"
+            selectedKeys={activeFilters.year ? [activeFilters.year] : []}
+            onChange={(event) =>
+              setActiveFilters((current) => ({
+                ...current,
+                year: event.target.value,
+              }))
+            }
+          >
+            {availableYears.map((year) => (
+              <SelectItem key={year}>{year}</SelectItem>
+            ))}
+          </Select>
+          <Select
+            aria-label="Department"
+            className="lg:max-w-[220px]"
+            placeholder="Department"
+            selectedKeys={activeFilters.departments}
+            onChange={(event) =>
+              setActiveFilters((current) => ({
+                ...current,
+                departments: event.target.value ? [event.target.value] : [],
+              }))
+            }
+          >
+            {instituteDepartments.map((department) => (
+              <SelectItem key={department._id!}>{department.name}</SelectItem>
+            ))}
+          </Select>
+          <Select
+            aria-label="Sort groups"
+            className="lg:max-w-[150px]"
+            selectedKeys={[sort]}
+            onChange={(event) => setSort(event.target.value)}
+          >
+            <SelectItem key="newest">Newest</SelectItem>
+            <SelectItem key="oldest">Oldest</SelectItem>
+          </Select>
+        </div>
+        {hasFilters && (
+          <Button variant="light" onPress={clearFilters}>
+            Clear filters
+          </Button>
+        )}
+      </section>
+
+      <section className="campus-table">
+        {isLoading ? (
+          <div className="flex h-64 items-center justify-center">
+            <Spinner size="lg" />
           </div>
+        ) : error ? (
+          <EmptyState
+            icon={<Users className="h-5 w-5" />}
+            title="Unable to load placement groups"
+            description={error}
+            action={<Button color="primary" onPress={() => fetchGroups()}>Retry</Button>}
+          />
+        ) : filteredGroups.length === 0 ? (
+          <EmptyState
+            icon={<Users className="h-5 w-5" />}
+            title={hasFilters ? "No groups match this view" : "No placement groups yet"}
+            description={
+              hasFilters
+                ? "Clear or adjust filters to see more cohorts."
+                : "Create a placement group to define eligibility for drives and invitations."
+            }
+            action={
+              !hasFilters && (
+                <Button color="primary" startContent={<Plus size={16} />} onPress={() => navigate("create")}>
+                  Create group
+                </Button>
+              )
+            }
+          />
+        ) : (
+          <div className="divide-y divide-slate-100">
+            {filteredGroups.map((group) => {
+              const departments = Array.isArray(group.departments)
+                ? group.departments
+                    .map(
+                      (deptId) =>
+                        instituteDepartments.find((dept) => dept._id === deptId)
+                          ?.name || deptId
+                    )
+                    .slice(0, 3)
+                : [];
+              return (
+                <article
+                  key={group._id}
+                  className="grid cursor-pointer gap-4 px-5 py-4 transition hover:bg-slate-50 xl:grid-cols-[1fr_180px_1fr_auto]"
+                  onClick={() => navigate(`/placement-groups/${group._id}`)}
+                >
+                  <div className="min-w-0">
+                    <div className="flex flex-wrap items-center gap-2">
+                      <h2 className="truncate text-sm font-semibold text-slate-950">
+                        {group.name}
+                      </h2>
+                      <StatusPill tone={group.archived ? "neutral" : "success"}>
+                        {group.archived ? "Archived" : "Active"}
+                      </StatusPill>
+                    </div>
+                    <p className="mt-1 text-sm text-slate-500">
+                      Created {new Date(group?.createdAt!).toLocaleDateString()}
+                    </p>
+                  </div>
 
-          <div className="flex gap-8">
-            <div className="w-1/4">
-              <Filter
-                departments={instituteDepartments}
-                onFilterChange={handleFilterChange}
-                onClearFilters={handleClearFilters}
-              />
-            </div>
-            <div className="w-3/4">
-              <div className="flex justify-between items-center mb-6">
-                <div className="flex gap-4 items-center">
-                  <Select
-                    className="w-[200px]"
-                    selectedKeys={[sort]}
-                    onChange={(e) => setSort(e.target.value)}
-                  >
-                    <SelectItem key="newest">Newest</SelectItem>
-                    <SelectItem key="oldest">Oldest</SelectItem>
-                  </Select>
+                  <div>
+                    <p className="campus-muted-label">Academic year</p>
+                    <p className="mt-1 text-sm text-slate-700">
+                      {group.academicYear?.start} - {group.academicYear?.end}
+                    </p>
+                  </div>
 
-                  <Input
-                    className="w-[300px]"
-                    placeholder="Search Group"
-                    value={searchTerm}
-                    onChange={(e) => setSearchTerm(e.target.value)}
-                    startContent={
-                      <Search className="text-default-400" size={20} />
-                    }
-                  />
-                </div>
+                  <div>
+                    <p className="campus-muted-label">Departments</p>
+                    <div className="mt-1 flex flex-wrap gap-2">
+                      {departments.length ? (
+                        departments.map((department) => (
+                          <StatusPill key={department}>{department}</StatusPill>
+                        ))
+                      ) : (
+                        <span className="text-sm text-slate-500">All departments</span>
+                      )}
+                    </div>
+                  </div>
 
-                {/* Display total count from pagination */}
-                <div className="text-default-500">
-                  Total: {pagination.total} groups
-                </div>
-              </div>
-
-              <div className="flex gap-4 mb-6">
-                {/* Filter buttons commented out in original code */}
-              </div>
-
-              {renderPlacementGroups()}
-
-              {editGroup && (
-                <EditGroupModal
-                  group={editGroup}
-                  instituteDepartments={instituteDepartments}
-                  instituteCandidates={institute.candidates}
-                  onClose={() => setEditGroup(null)}
-                  onSave={(updatedGroup) => {
-                    setGroups(
-                      groups.map((g) =>
-                        g._id === updatedGroup._id ? updatedGroup : g
-                      )
-                    );
-                    setEditGroup(null);
-                  }}
-                />
-              )}
-
-              {/* Delete Confirmation Modal */}
-              <Modal isOpen={isDeleteModalOpen} onClose={closeDeleteModal}>
-                <ModalContent>
-                  {(onClose) => (
-                    <>
-                      <ModalHeader className="flex flex-col gap-1">
-                        Confirm Deletion
-                      </ModalHeader>
-                      <ModalBody>
-                        <p>
-                          Are you sure you want to delete the placement group
-                          <span className="font-bold">
-                            {" "}
-                            {deleteGroup?.name}
-                          </span>
-                          ?
-                        </p>
-                        <p className="text-danger">
-                          This action cannot be undone.
-                        </p>
-                      </ModalBody>
-                      <ModalFooter>
-                        <Button
-                          variant="flat"
-                          onPress={onClose}
-                          disabled={isDeleting}
-                        >
-                          Cancel
+                  <div className="flex items-center justify-end gap-2" onClick={(event) => event.stopPropagation()}>
+                    <Button
+                      isIconOnly
+                      variant="flat"
+                      aria-label="Copy group link"
+                      onPress={() => handleCopyLink(group._id!)}
+                    >
+                      <Copy size={16} />
+                    </Button>
+                    <Dropdown>
+                      <DropdownTrigger>
+                        <Button isIconOnly variant="flat" aria-label="Group actions">
+                          <MoreVertical size={18} />
                         </Button>
-                        <Button
+                      </DropdownTrigger>
+                      <DropdownMenu
+                        onAction={(key) => {
+                          if (key === "edit") setEditGroup(group);
+                          if (key === "archive") handleArchive(group._id!);
+                          if (key === "delete") {
+                            setDeleteGroup(group);
+                            openDeleteModal();
+                          }
+                        }}
+                      >
+                        <DropdownItem key="edit">Edit</DropdownItem>
+                        <DropdownItem key="archive">
+                          {group.archived ? "Unarchive" : "Archive"}
+                        </DropdownItem>
+                        <DropdownItem
+                          key="delete"
+                          className="text-danger"
                           color="danger"
-                          onPress={handleDeleteConfirm}
-                          startContent={<Trash size={18} />}
-                          isLoading={isDeleting}
-                          disabled={isDeleting}
+                          startContent={<Trash size={16} />}
                         >
-                          {isDeleting ? "Deleting..." : "Delete"}
-                        </Button>
-                      </ModalFooter>
-                    </>
-                  )}
-                </ModalContent>
-              </Modal>
-            </div>
+                          Delete
+                        </DropdownItem>
+                      </DropdownMenu>
+                    </Dropdown>
+                  </div>
+                </article>
+              );
+            })}
           </div>
-        </motion.div>
-      </AnimatePresence>
-    </div>
+        )}
+      </section>
+
+      {pagination.pages > 1 && (
+        <div className="flex justify-center">
+          <Pagination
+            total={pagination.pages}
+            page={pagination.page}
+            onChange={fetchGroups}
+            showControls
+          />
+        </div>
+      )}
+
+      {editGroup && (
+        <EditGroupModal
+          group={editGroup}
+          instituteDepartments={instituteDepartments}
+          instituteCandidates={institute.candidates}
+          onClose={() => setEditGroup(null)}
+          onSave={(updatedGroup) => {
+            setGroups(
+              groups.map((group) =>
+                group._id === updatedGroup._id ? updatedGroup : group
+              )
+            );
+            setEditGroup(null);
+          }}
+        />
+      )}
+
+      <Modal isOpen={isDeleteModalOpen} onClose={closeDeleteModal}>
+        <ModalContent>
+          {(onClose) => (
+            <>
+              <ModalHeader className="flex flex-col gap-1">
+                Delete placement group
+              </ModalHeader>
+              <ModalBody>
+                <p className="text-sm leading-6 text-slate-600">
+                  Delete <span className="font-semibold">{deleteGroup?.name}</span>?
+                  This action cannot be undone.
+                </p>
+              </ModalBody>
+              <ModalFooter>
+                <Button variant="flat" onPress={onClose} isDisabled={isDeleting}>
+                  Cancel
+                </Button>
+                <Button
+                  color="danger"
+                  onPress={handleDeleteConfirm}
+                  startContent={<Trash size={16} />}
+                  isLoading={isDeleting}
+                >
+                  Delete
+                </Button>
+              </ModalFooter>
+            </>
+          )}
+        </ModalContent>
+      </Modal>
+    </PageShell>
   );
 };
 

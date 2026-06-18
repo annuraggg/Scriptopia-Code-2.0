@@ -32,7 +32,7 @@ import {
   FilterIcon,
 } from "lucide-react";
 import Filter from "./Filter";
-import { useAuth } from "@clerk/clerk-react";
+import { useAuth } from "@/auth";
 import ax from "@/config/axios";
 import { toast } from "sonner";
 import { Posting } from "@shared-types/Posting";

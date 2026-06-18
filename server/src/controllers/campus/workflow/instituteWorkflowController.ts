@@ -1,7 +1,7 @@
 import { Context } from "hono";
 import { InvokeCommand, LambdaClient } from "@aws-sdk/client-lambda";
 import loops from "@/config/loops";
-import clerkClient from "@/config/clerk";
+import userDirectory from "@/services/userDirectory";
 import { v4 as uuidv4 } from "uuid";
 import mongoose from "mongoose";
 import { z } from "zod";
@@ -313,12 +313,12 @@ const handleResumeScreening = async (
   }
 
   const dbUser = await User.findById(member.user?._id).session(session);
-  if (!dbUser || !dbUser.clerkId) {
+  if (!dbUser || !dbUser._id.toString()) {
     throw new Error("User data incomplete for resume screening notification");
   }
 
-  // Get user details from Clerk
-  const clerkUser = await clerkClient.users.getUser(dbUser.clerkId);
+  // Get user details from identity provider
+  const accountUser = await userDirectory.users.getUser(dbUser._id.toString());
 
   // Create deterministic request ID for idempotency
   const requestId = uuidv4();
@@ -338,7 +338,7 @@ const handleResumeScreening = async (
     resumes: validResumes,
     mailData: {
       name:
-        `${clerkUser.firstName || ""} ${clerkUser.lastName || ""}`.trim() ||
+        `${accountUser.firstName || ""} ${accountUser.lastName || ""}`.trim() ||
         "User",
       email: member.email || dbUser.email,
       drive: drive.title,
@@ -776,7 +776,7 @@ const logWorkflowAdvance = async (
       return;
     }
 
-    const clerkUser = await clerkClient.users.getUser(authUserId);
+    const accountUser = await userDirectory.users.getUser(authUserId);
     const institute = await Institute.findById(
       perms.data.institute._id
     ).session(session);
@@ -788,14 +788,14 @@ const logWorkflowAdvance = async (
     }
 
     const userName =
-      `${clerkUser.firstName || ""} ${clerkUser.lastName || ""}`.trim() ||
+      `${accountUser.firstName || ""} ${accountUser.lastName || ""}`.trim() ||
       "Unknown User";
 
     // Add audit log
     institute.auditLogs.push({
       action: `Advanced workflow for ${drive.title} to next step`,
       user: userName,
-      userId: clerkUser.id,
+      userId: accountUser.id,
       type: "info",
       timestamp: new Date(),
     });

@@ -29,7 +29,7 @@ const generateYears = () => {
   const endYear = currentYear + 4;
   return Array.from(
     { length: endYear - startYear + 1 },
-    (_, i) => `${startYear + i}`
+    (_, i) => `${startYear + i}`,
   );
 };
 
@@ -53,9 +53,9 @@ const GroupDetailsTab: React.FC<GroupDetailsTabProps> = ({
 
   const toggleDepartment = (departmentId: string) => {
     setSelectedDepartments(
-      selectedDepartments.includes(departmentId)
+      selectedDepartments?.includes(departmentId)
         ? selectedDepartments.filter((id) => id !== departmentId)
-        : [...selectedDepartments, departmentId]
+        : [...(selectedDepartments || []), departmentId],
     );
   };
 
@@ -153,7 +153,10 @@ const GroupDetailsTab: React.FC<GroupDetailsTabProps> = ({
                   key={department._id}
                   department={department}
                   isSelected={selectedDepartments.includes(department._id!)}
-                  onToggle={() => toggleDepartment(department._id!)}
+                  onToggle={() => {
+                    console.log("Toggling department:", department);
+                    toggleDepartment(department._id!);
+                  }}
                 />
               ))}
             </div>

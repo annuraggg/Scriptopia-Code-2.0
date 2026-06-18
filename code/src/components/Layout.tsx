@@ -1,4 +1,4 @@
-import { RedirectToSignIn, SignedIn, SignedOut } from "@clerk/clerk-react";
+import { RedirectToSignIn, SignedIn, SignedOut } from "@/auth";
 import { Outlet } from "react-router-dom";
 import Navbar from "./Navbar";
 import { useState } from "react";

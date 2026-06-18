@@ -2,7 +2,7 @@ import { Tab, Tabs } from "@heroui/tabs";
 import Overview from "./Overview";
 import { useEffect, useState } from "react";
 import { ExtendedCodeAssessmentSubmission as ECAS } from "@shared-types/ExtendedCodeAssessmentSubmission";
-import { useAuth } from "@clerk/clerk-react";
+import { useAuth } from "@/auth";
 import ax from "@/config/axios";
 import { toast } from "sonner";
 import Result from "./Result";

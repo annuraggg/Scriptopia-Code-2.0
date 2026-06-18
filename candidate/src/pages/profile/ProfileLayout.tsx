@@ -1,6 +1,6 @@
 import { Outlet, useOutletContext } from "react-router-dom";
 import { Candidate } from "@shared-types/Candidate";
-import { useAuth } from "@clerk/clerk-react";
+import { useAuth } from "@/auth";
 import ax from "@/config/axios";
 import { toast } from "sonner";
 

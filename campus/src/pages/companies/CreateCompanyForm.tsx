@@ -3,7 +3,7 @@ import { ChevronRight } from "lucide-react";
 import CompanyDetailsTab from "./CompanyDetailsTab";
 import CompanyHRTab from "./CompanyHRTab";
 import CompanyStatsTab from "./CompanyStatsTab";
-import { useAuth } from "@clerk/clerk-react";
+import { useAuth } from "@/auth";
 import ax from "@/config/axios";
 import { toast } from "sonner";
 import { Company } from "@shared-types/Company";

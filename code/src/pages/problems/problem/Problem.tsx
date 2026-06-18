@@ -1,6 +1,6 @@
 import ProblemComponent from "@/components/problem/Problem";
 import ax from "@/config/axios";
-import { useAuth } from "@clerk/clerk-react";
+import { useAuth } from "@/auth";
 import { Problem as ProblemType } from "@shared-types/Problem";
 import { Submission } from "@shared-types/Submission";
 import { useEffect, useState } from "react";

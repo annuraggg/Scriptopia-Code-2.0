@@ -8,7 +8,7 @@ import ConundrumCubes from "./ConundrumCubes";
 import MyProblems from "./MyProblems";
 import Loader from "@/components/Loader";
 import ErrorPage from "@/components/ErrorPage";
-import { useAuth } from "@clerk/clerk-react";
+import { useAuth } from "@/auth";
 import ax from "@/config/axios";
 
 const Problems = () => {

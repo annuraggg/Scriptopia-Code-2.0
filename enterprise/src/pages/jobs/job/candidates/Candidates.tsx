@@ -1,7 +1,7 @@
 import { motion } from "framer-motion";
 import { DataTable } from "./DataTable";
 import { useEffect, useState } from "react";
-import { useAuth } from "@clerk/clerk-react";
+import { useAuth } from "@/auth";
 import ax from "@/config/axios";
 
 const Candidates = () => {

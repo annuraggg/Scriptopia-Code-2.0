@@ -1,7 +1,7 @@
 import { Context } from "hono";
 import { InvokeCommand, LambdaClient } from "@aws-sdk/client-lambda";
 import loops from "@/config/loops";
-import clerkClient from "@/config/clerk";
+import userDirectory from "@/services/userDirectory";
 
 import Posting from "../../../models/Posting";
 import Organization from "../../../models/Organization";
@@ -134,7 +134,7 @@ const handleResumeScreening = async (posting: any, orgId?: string) => {
   );
   const dbUser = await User.findById(user?.user);
   if (!dbUser) return;
-  const clerkUser = await clerkClient.users.getUser(dbUser?.clerkId);
+  const accountUser = await userDirectory.users.getUser(dbUser?._id.toString());
 
   const event = {
     jobDescription: posting.description,
@@ -144,7 +144,7 @@ const handleResumeScreening = async (posting: any, orgId?: string) => {
     postingId: posting._id.toString(),
     resumes: resumes.filter(Boolean),
     mailData: {
-      name: clerkUser.firstName + " " + clerkUser.lastName,
+      name: accountUser.firstName + " " + accountUser.lastName,
       email: user?.email,
       posting: posting.title,
       resumeScreenUrl: `${process.env.ENTERPRISE_FRONTEND_URL}/jobs/${posting.url}/ats`,
@@ -283,7 +283,7 @@ const handleInterviewRound = async (posting: any, step: any) => {
 };
 
 const logWorkflowAdvance = async (c: Context, posting: any, perms: any) => {
-  const clerkUser = await clerkClient.users.getUser(c.get("auth").userId);
+  const accountUser = await userDirectory.users.getUser(c.get("auth").userId);
   const organization = await Organization.findById(
     perms.data!.organization?._id
   );
@@ -291,8 +291,8 @@ const logWorkflowAdvance = async (c: Context, posting: any, perms: any) => {
 
   organization.auditLogs.push({
     action: `Advanced workflow for ${posting.title} to next step`,
-    user: `${clerkUser.firstName} ${clerkUser.lastName}`,
-    userId: clerkUser.id,
+    user: `${accountUser.firstName} ${accountUser.lastName}`,
+    userId: accountUser.id,
     type: "info",
   });
 

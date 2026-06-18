@@ -2,7 +2,7 @@ import { motion } from "framer-motion";
 import { useEffect, useState } from "react";
 import Sidebar from "./Sidebar";
 import ax from "@/config/axios";
-import { useAuth } from "@clerk/clerk-react";
+import { useAuth } from "@/auth";
 import MCQAssess from "./MCQAssess";
 import CodeAssess from "./CodeAssess";
 import { toast } from "sonner";

@@ -10,7 +10,6 @@ import "../utils/logger";
 import "./db";
 // import "./cache";
 import "./loops";
-import "./clerk";
 
 import homeRoute from "../routes/homeRoute";
 import problemRoute from "../routes/problemsRoute";
@@ -27,7 +26,6 @@ import companyProfileRoute from "../routes/companyRoute";
 import meetRoutes from "../routes/meetRoutes";
 
 import userRoute from "../routes/userRoute";
-import { clerkMiddleware } from "@hono/clerk-auth";
 import { trackRouteHits } from "../middlewares/routeTracker";
 
 import { Server } from "socket.io";
@@ -60,7 +58,6 @@ ioServer.on("error", (err) => {
 });
 
 
-app.use("*", clerkMiddleware())
 app.use(trackRouteHits());
 app.use(prettyJSON());
 app.use(cors());

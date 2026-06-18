@@ -4,11 +4,12 @@ import { createBrowserRouter, RouterProvider } from "react-router-dom";
 import { useDispatch } from "react-redux";
 import { setInstitute } from "./reducers/instituteReducer";
 import {
+  AuthPage,
   RedirectToSignIn,
   SignedIn,
   SignedOut,
   useUser,
-} from "@clerk/clerk-react";
+} from "@/auth";
 import CreateDrive from "./pages/drives/create/CreateDrive";
 import GroupDetails from "./pages/placementgroups/GroupDetails";
 
@@ -127,6 +128,14 @@ function App() {
 
   // Define routes for each section
   const router = createBrowserRouter([
+    {
+      path: "/auth/login",
+      element: <AuthPage />,
+    },
+    {
+      path: "/auth/register",
+      element: <AuthPage />,
+    },
     {
       path: "/",
       element: (

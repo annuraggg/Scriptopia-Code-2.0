@@ -16,7 +16,7 @@ import {
 import { ExtendedPosting } from "@shared-types/ExtendedPosting";
 import AssignmentSubmissionVanilla from "@shared-types/AssignmentSubmission";
 import { toast } from "sonner";
-import { useAuth } from "@clerk/clerk-react";
+import { useAuth } from "@/auth";
 import ax from "@/config/axios";
 
 type AssignmentSubmission = AssignmentSubmissionVanilla & {

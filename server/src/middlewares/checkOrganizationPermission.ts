@@ -1,9 +1,8 @@
 import { sendError } from "../utils/sendResponse";
-import { getAuth } from "@hono/clerk-auth";
-import clerkClient from "../config/clerk";
 import { Context } from "hono";
 import logger from "../utils/logger";
 import { UserMeta } from "@shared-types/UserMeta";
+import { getUserMetadata } from "@/utils/auth";
 
 interface ReturnType {
   allowed: boolean;
@@ -13,9 +12,7 @@ interface ReturnType {
 class checkOrganizationPermission {
   private static async getUserMeta(userId: string) {
     try {
-      const user = await clerkClient.users.getUser(userId);
-      const perms = user.publicMetadata as unknown as UserMeta;
-      return perms;
+      return await getUserMetadata(userId);
     } catch (error) {
       throw new Error("Error retrieving or verifying user Meta");
     }
@@ -25,7 +22,7 @@ class checkOrganizationPermission {
     c: Context<any, any, {}>,
     permissions: string[]
   ): Promise<ReturnType> => {
-    const auth = getAuth(c);
+    const auth = c.get("auth");
     if (!auth?.userId) {
       sendError(c, 401, "Unauthorized in checkPermission");
       return { allowed: false, data: null };
@@ -51,7 +48,7 @@ class checkOrganizationPermission {
     c: Context<any, any, {}>,
     permissions: string[]
   ): Promise<ReturnType> => {
-    const auth = getAuth(c);
+    const auth = c.get("auth");
     if (!auth?.userId) {
       sendError(c, 401, "Unauthorized in checkPermission");
       return { allowed: false, data: null };

@@ -21,7 +21,7 @@ import {
   getLocalTimeZone,
   parseAbsoluteToLocal,
 } from "@internationalized/date";
-import { useAuth } from "@clerk/clerk-react";
+import { useAuth } from "@/auth";
 import ax from "@/config/axios";
 import { toast } from "sonner";
 import {

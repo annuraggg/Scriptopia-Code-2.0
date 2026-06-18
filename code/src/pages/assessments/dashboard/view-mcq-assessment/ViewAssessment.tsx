@@ -2,7 +2,7 @@
 import Top from "./Top";
 import Bottom from "./Bottom";
 import { motion } from "framer-motion";
-import { useAuth } from "@clerk/clerk-react";
+import { useAuth } from "@/auth";
 import ax from "@/config/axios";
 import { useEffect, useState } from "react";
 import { MCQAssessment } from "@shared-types/MCQAssessment";

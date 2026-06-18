@@ -22,7 +22,7 @@ import {
   TableCell,
   Pagination,
 } from "@nextui-org/react";
-import { useAuth } from "@clerk/clerk-react";
+import { useAuth } from "@/auth";
 import { motion } from "framer-motion";
 import ax from "@/config/axios";
 import { toast } from "react-toastify";

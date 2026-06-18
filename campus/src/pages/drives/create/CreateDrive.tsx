@@ -4,7 +4,7 @@ import DriveDetails from "./DriveDetails";
 import Workflow from "./Workflow";
 import { today, getLocalTimeZone, DateValue } from "@internationalized/date";
 import Summary from "./Summary";
-import { useAuth } from "@clerk/clerk-react";
+import { useAuth } from "@/auth";
 import ax from "@/config/axios";
 import {
   Drive,

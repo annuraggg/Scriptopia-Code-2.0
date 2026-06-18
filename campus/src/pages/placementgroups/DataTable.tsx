@@ -45,7 +45,7 @@ import {
 import { useState } from "react";
 import ax from "@/config/axios";
 import { toast } from "sonner";
-import { useAuth } from "@clerk/clerk-react";
+import { useAuth } from "@/auth";
 import { Candidate } from "@shared-types/Candidate";
 
 interface DataTableProps<TData extends Candidate> {

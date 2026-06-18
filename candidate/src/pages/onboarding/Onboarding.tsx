@@ -12,7 +12,7 @@ import {
   SignOutButton,
   useAuth,
   useUser,
-} from "@clerk/clerk-react";
+} from "@/auth";
 import ax from "@/config/axios";
 import Address from "./Address";
 import Loader from "@/components/Loader";

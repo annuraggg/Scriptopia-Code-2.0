@@ -3,7 +3,7 @@ import Sidebar from "./Sidebar";
 import { RootContext } from "@/types/RootContext";
 import { useEffect, useState } from "react";
 import UnsavedToast from "@/components/UnsavedToast";
-import { useAuth } from "@clerk/clerk-react";
+import { useAuth } from "@/auth";
 import ax from "@/config/axios";
 import { toast as sonner } from "sonner";
 import { ExtendedInstitute } from "@shared-types/ExtendedInstitute";

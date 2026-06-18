@@ -4,7 +4,7 @@ import { DataTable } from "./DataTable";
 import { RootState } from "@/types/Reducer";
 import { Breadcrumbs, BreadcrumbItem } from "@heroui/breadcrumbs";
 import { useSelector } from "react-redux";
-import { useAuth } from "@clerk/clerk-react";
+import { useAuth } from "@/auth";
 import ax from "@/config/axios";
 import { Spinner } from "@heroui/spinner";
 

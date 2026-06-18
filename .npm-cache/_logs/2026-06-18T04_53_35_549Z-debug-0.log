@@ -1,0 +1,57 @@
+0 verbose cli C:\Program Files\nodejs\node.exe C:\Program Files\nodejs\node_modules\npm\bin\npm-cli.js
+1 info using npm@11.12.1
+2 info using node@v24.15.0
+3 silly config load:file:C:\Program Files\nodejs\node_modules\npm\npmrc
+4 silly config load:file:C:\Projects\scriptopia_suite\scripts\mongodb\.npmrc
+5 silly config load:file:C:\Users\Anurag Sawant\.npmrc
+6 silly config load:file:C:\Users\Anurag Sawant\AppData\Roaming\npm\etc\npmrc
+7 verbose title npm install
+8 verbose argv "install" "--package-lock-only" "--ignore-scripts" "--cache" "C:\\Projects\\scriptopia_suite\\.npm-cache"
+9 verbose logfile logs-max:10 dir:C:\Projects\scriptopia_suite\.npm-cache\_logs\2026-06-18T04_53_35_549Z-
+10 verbose logfile C:\Projects\scriptopia_suite\.npm-cache\_logs\2026-06-18T04_53_35_549Z-debug-0.log
+11 silly logfile done cleaning log files
+12 silly packumentCache heap:2348810240 maxSize:587202560 maxEntrySize:293601280
+13 silly idealTree buildDeps
+14 silly audit bulk request {
+14 silly audit   '@mongodb-js/saslprep': [ '1.2.2' ],
+14 silly audit   '@types/webidl-conversions': [ '7.0.3' ],
+14 silly audit   '@types/whatwg-url': [ '11.0.5' ],
+14 silly audit   bson: [ '6.10.3' ],
+14 silly audit   'csv-parse': [ '5.6.0' ],
+14 silly audit   debug: [ '4.4.0' ],
+14 silly audit   dotenv: [ '16.5.0' ],
+14 silly audit   kareem: [ '2.6.3' ],
+14 silly audit   'memory-pager': [ '1.5.0' ],
+14 silly audit   mongodb: [ '6.15.0' ],
+14 silly audit   'mongodb-connection-string-url': [ '3.0.2' ],
+14 silly audit   mongoose: [ '8.13.2' ],
+14 silly audit   mpath: [ '0.9.0' ],
+14 silly audit   mquery: [ '5.0.0' ],
+14 silly audit   ms: [ '2.1.3' ],
+14 silly audit   punycode: [ '2.3.1' ],
+14 silly audit   sift: [ '17.1.3' ],
+14 silly audit   'sparse-bitfield': [ '3.0.3' ],
+14 silly audit   tr46: [ '5.1.0' ],
+14 silly audit   'webidl-conversions': [ '7.0.0' ],
+14 silly audit   'whatwg-url': [ '14.2.0' ]
+14 silly audit }
+15 http fetch GET https://registry.npmjs.org/npm attempt 1 failed with EACCES
+16 verbose audit error FetchError: request to https://registry.npmjs.org/-/npm/v1/security/advisories/bulk failed, reason: 
+16 verbose audit error     at ClientRequest.<anonymous> (C:\Program Files\nodejs\node_modules\npm\node_modules\minipass-fetch\lib\index.js:130:14)
+16 verbose audit error     at ClientRequest.emit (node:events:509:28)
+16 verbose audit error     at emitErrorEvent (node:_http_client:109:11)
+16 verbose audit error     at _destroy (node:_http_client:993:9)
+16 verbose audit error     at onSocketNT (node:_http_client:1013:5)
+16 verbose audit error     at process.processTicksAndRejections (node:internal/process/task_queues:91:21) {
+16 verbose audit error   code: 'EACCES',
+16 verbose audit error   errno: 'EACCES',
+16 verbose audit error   type: 'system'
+16 verbose audit error }
+17 silly audit error undefined
+18 silly audit report null
+19 verbose cwd C:\Projects\scriptopia_suite\scripts\mongodb
+20 verbose os Windows_NT 10.0.26200
+21 verbose node v24.15.0
+22 verbose npm  v11.12.1
+23 verbose exit 0
+24 info ok

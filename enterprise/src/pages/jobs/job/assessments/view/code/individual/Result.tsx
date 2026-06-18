@@ -1,7 +1,7 @@
 import React, { useState } from "react";
 import { ExtendedCodeAssessmentSubmission } from "@shared-types/ExtendedCodeAssessmentSubmission";
 import { User, Mail, CheckCircle, XCircle } from "lucide-react";
-import { useAuth } from "@clerk/clerk-react";
+import { useAuth } from "@/auth";
 import ax from "@/config/axios";
 import { toast } from "sonner";
 import { NumberInput } from "@heroui/number-input";

@@ -11,7 +11,7 @@ import {
 import { useNavigate } from "react-router-dom";
 import { toast } from "sonner";
 import ax from "@/config/axios";
-import { useAuth } from "@clerk/clerk-react";
+import { useAuth } from "@/auth";
 import { CodeAssessment } from "@shared-types/CodeAssessment";
 import confirmDelete from "@/components/ui/confirm-delete";
 import { Chip } from "@heroui/react";

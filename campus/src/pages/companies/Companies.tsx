@@ -1,32 +1,38 @@
 import { useNavigate } from "react-router-dom";
-import { useState, useMemo, useEffect } from "react";
-import { motion, AnimatePresence } from "framer-motion";
+import { useEffect, useMemo, useState } from "react";
 import {
-  Card,
-  Input,
   Button,
+  Dropdown,
+  DropdownItem,
+  DropdownMenu,
+  DropdownTrigger,
+  Input,
   Select,
   SelectItem,
-  Dropdown,
-  DropdownTrigger,
-  DropdownMenu,
-  DropdownItem,
   Spinner,
 } from "@nextui-org/react";
 import {
-  Search,
-  Plus,
-  MoreVertical,
+  Archive,
+  Building2,
   Calendar,
+  MoreVertical,
+  Plus,
+  RefreshCw,
+  Search,
+  Trash2,
+  TrendingUp,
   Users,
-  DollarSign,
 } from "lucide-react";
-import { useAuth } from "@clerk/clerk-react";
+import { useAuth } from "@/auth";
 import ax from "@/config/axios";
 import { toast } from "sonner";
 import CreateCompanyForm from "./CreateCompanyForm";
 import EditCompanyModal from "./EditCompanyModal";
 import { Company } from "@shared-types/Company";
+import { PageShell } from "@/components/campus/PageShell";
+import { MetricCard } from "@/components/campus/MetricCard";
+import { StatusPill } from "@/components/campus/StatusPill";
+import { EmptyState } from "@/components/campus/EmptyState";
 
 interface Filters {
   year: string;
@@ -58,7 +64,7 @@ const CompanyProfiles = () => {
   const [companies, setCompanies] = useState<Company[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [sort, setSort] = useState<string>("newest");
+  const [sort, setSort] = useState("newest");
   const [searchTerm, setSearchTerm] = useState("");
   const [filter, setFilter] = useState<"all" | "active" | "archived">("all");
   const [showCreateForm, setShowCreateForm] = useState(false);
@@ -67,16 +73,9 @@ const CompanyProfiles = () => {
   const [showEditModal, setShowEditModal] = useState(false);
   const [companyToEdit, setCompanyToEdit] = useState<Company | null>(null);
   const [refetchCompanies, setRefetchCompanies] = useState(false);
-
-  // Loading states for different operations
   const [isDeleting, setIsDeleting] = useState(false);
-  const [archivingCompanyId, setArchivingCompanyId] = useState<string | null>(
-    null
-  );
-  const [isApplyingFilters, setIsApplyingFilters] = useState(false);
-  const [isClearingFilters, setIsClearingFilters] = useState(false);
+  const [archivingCompanyId, setArchivingCompanyId] = useState<string | null>(null);
   const [isRefreshing, setIsRefreshing] = useState(false);
-
   const [filters, setFilters] = useState<Filters>({
     year: "",
     studentsRange: "",
@@ -88,51 +87,38 @@ const CompanyProfiles = () => {
   const { getToken } = useAuth();
   const axios = ax(getToken);
 
-  // Helper functions for getting metrics from yearStats array
-  const getTotalStudentsHired = (company: Company): number => {
-    return company.generalInfo.yearStats.reduce(
-      (total, stat) => total + stat.hired,
-      0
-    );
-  };
+  const getYearStats = (company: Company) => company.generalInfo?.yearStats || [];
+
+  const getTotalStudentsHired = (company: Company): number =>
+    getYearStats(company).reduce((total, stat) => total + stat.hired, 0);
 
   const getAveragePackage = (company: Company): number => {
-    const stats = company.generalInfo.yearStats;
-    if (stats.length === 0) return 0;
-
-    // Calculate weighted average based on number of students hired per year
+    const stats = getYearStats(company);
     const totalStudents = stats.reduce((sum, stat) => sum + stat.hired, 0);
-    if (totalStudents === 0) return 0;
-
-    const weightedSum = stats.reduce(
-      (sum, stat) => sum + stat.average * stat.hired,
-      0
+    if (!totalStudents) return 0;
+    return (
+      stats.reduce((sum, stat) => sum + stat.average * stat.hired, 0) /
+      totalStudents
     );
-
-    return weightedSum / totalStudents;
   };
 
   const getHighestPackage = (company: Company): number => {
-    const stats = company.generalInfo.yearStats;
-    if (stats.length === 0) return 0;
-    return Math.max(...stats.map((stat) => stat.highest));
+    const stats = getYearStats(company);
+    return stats.length ? Math.max(...stats.map((stat) => stat.highest)) : 0;
   };
 
-  const getYearsOfVisit = (company: Company): string[] => {
-    return company.generalInfo.yearStats.map((stat) => stat.year);
-  };
+  const getYearsOfVisit = (company: Company): string[] =>
+    getYearStats(company).map((stat) => stat.year);
 
   const getMostRecentYear = (company: Company): string => {
     const years = getYearsOfVisit(company);
-    return years.length > 0 ? years.sort().reverse()[0] : "N/A";
+    return years.length > 0 ? years.sort().reverse()[0] : "No visits";
   };
 
-  // Helper function to show error messages
-  const showError = (err: any, defaultMessage: string) => {
-    let message = defaultMessage;
-    if (err?.response?.data?.message) {
-      message = err.response.data.message;
-    }
+  const showError = (err: unknown, defaultMessage: string) => {
+    const message =
+      (err as { response?: { data?: { message?: string } } })?.response?.data
+        ?.message || defaultMessage;
     toast.error(message);
   };
 
@@ -146,7 +132,6 @@ const CompanyProfiles = () => {
           setError(null);
         } else {
           setError("Invalid data format received from server");
-          console.error("Invalid data format:", response.data);
           toast.error("Invalid data format received from server");
         }
       })
@@ -154,7 +139,6 @@ const CompanyProfiles = () => {
         const errorMessage =
           err?.response?.data?.message || "Failed to load companies";
         setError(errorMessage);
-        console.error("Error fetching companies:", err);
         toast.error(errorMessage);
       })
       .finally(() => {
@@ -168,13 +152,17 @@ const CompanyProfiles = () => {
   }, [refetchCompanies]);
 
   const refreshCompanies = async () => {
-    try {
-      setIsRefreshing(true);
-      await fetchCompanies();
-    } finally {
-      setIsRefreshing(false);
-    }
+    setIsRefreshing(true);
+    await fetchCompanies();
   };
+
+  const availableYears = useMemo(() => {
+    const years = new Set<string>();
+    companies.forEach((company) => {
+      getYearStats(company).forEach((stat) => years.add(stat.year));
+    });
+    return Array.from(years).sort().reverse();
+  }, [companies]);
 
   const filteredCompanies = useMemo(() => {
     return companies
@@ -192,77 +180,64 @@ const CompanyProfiles = () => {
         if (filter === "archived" && !isArchived) return false;
 
         if (isFiltersApplied) {
-          // Filter by year
-          if (
-            filters.year &&
-            !getYearsOfVisit(company).includes(filters.year)
-          ) {
+          if (filters.year && !getYearsOfVisit(company).includes(filters.year)) {
             return false;
           }
 
-          // Filter by students range
           if (filters.studentsRange) {
             const [min, max] = parseRange(filters.studentsRange);
             const totalHired = getTotalStudentsHired(company);
-            if (totalHired < min || totalHired > max) {
-              return false;
-            }
+            if (totalHired < min || totalHired > max) return false;
           }
 
-          // Filter by average package
           if (filters.averagePackage) {
             const [min, max] = formatPackageRange(filters.averagePackage);
             const avgPackage = getAveragePackage(company);
-            if (avgPackage < min || avgPackage > max) {
-              return false;
-            }
+            if (avgPackage < min || avgPackage > max) return false;
           }
 
-          // Filter by highest package
           if (filters.highestPackage) {
             const [min, max] = formatPackageRange(filters.highestPackage);
             const highestPackage = getHighestPackage(company);
-            if (highestPackage < min || highestPackage > max) {
-              return false;
-            }
+            if (highestPackage < min || highestPackage > max) return false;
           }
         }
 
         return true;
       })
-      .sort((a, b) => {
-        return sort === "newest"
+      .sort((a, b) =>
+        sort === "newest"
           ? new Date(b.createdAt!).getTime() - new Date(a.createdAt!).getTime()
-          : new Date(a.createdAt!).getTime() - new Date(b.createdAt!).getTime();
-      });
-  }, [companies, searchTerm, filter, sort, filters, isFiltersApplied]);
+          : new Date(a.createdAt!).getTime() - new Date(b.createdAt!).getTime()
+      );
+  }, [companies, filters, filter, isFiltersApplied, searchTerm, sort]);
+
+  const activeCompanies = companies.filter((company) => !company.isArchived);
+  const totalStudentsHired = companies.reduce(
+    (total, company) => total + getTotalStudentsHired(company),
+    0
+  );
+  const topPackage = companies.length
+    ? Math.max(...companies.map((company) => getHighestPackage(company)))
+    : 0;
 
   const handleArchive = async (id: string) => {
     try {
       setArchivingCompanyId(id);
-      const company = companies.find((c) => c._id === id);
+      const company = companies.find((item) => item._id === id);
       const isCurrentlyArchived = !!company?.isArchived;
 
       await axios.post("/companies/archive", { id });
-
-      // Update the local state immediately
       setCompanies((prev) =>
-        prev.map((company) =>
-          company._id === id
-            ? { ...company, isArchived: !company.isArchived }
-            : company
+        prev.map((item) =>
+          item._id === id ? { ...item, isArchived: !item.isArchived } : item
         )
       );
-
       toast.success(
-        `Company ${
-          isCurrentlyArchived ? "unarchived" : "archived"
-        } successfully`
+        `Company ${isCurrentlyArchived ? "unarchived" : "archived"} successfully`
       );
     } catch (err) {
-      console.error("Error archiving company:", err);
       showError(err, "Failed to archive company");
-      // Refresh companies to ensure state is synced with server
       refreshCompanies();
     } finally {
       setArchivingCompanyId(null);
@@ -273,16 +248,12 @@ const CompanyProfiles = () => {
     try {
       setIsDeleting(true);
       await axios.delete(`/companies/${id}`);
-
-      // Update local state
       setCompanies((prev) => prev.filter((company) => company._id !== id));
       setShowDeleteModal(false);
       setCompanyToDelete(null);
       toast.success("Company deleted successfully");
     } catch (err) {
-      console.error("Error deleting company:", err);
       showError(err, "Failed to delete company");
-      // Refresh companies to ensure state is synced with server
       refreshCompanies();
     } finally {
       setIsDeleting(false);
@@ -290,445 +261,331 @@ const CompanyProfiles = () => {
   };
 
   const handleEditSuccess = () => {
-    setRefetchCompanies(true); // Refresh companies after editing
+    setRefetchCompanies((current) => !current);
     setShowEditModal(false);
     setCompanyToEdit(null);
     toast.success("Company updated successfully");
   };
 
   const formatCurrency = (amount: number) =>
-    `₹${(amount / 100000).toFixed(1)}L`;
+    amount ? `INR ${(amount / 100000).toFixed(1)}L` : "Not tracked";
 
-  const clearFilters = async () => {
-    try {
-      setIsClearingFilters(true);
-      setFilters({
-        year: "",
-        studentsRange: "",
-        averagePackage: "",
-        highestPackage: "",
-      });
-      setIsFiltersApplied(false);
-      toast.success("Filters cleared");
-    } catch (err) {
-      console.error("Error clearing filters:", err);
-      showError(err, "Failed to clear filters");
-    } finally {
-      setIsClearingFilters(false);
-    }
+  const clearFilters = () => {
+    setFilters({
+      year: "",
+      studentsRange: "",
+      averagePackage: "",
+      highestPackage: "",
+    });
+    setIsFiltersApplied(false);
+    toast.success("Filters cleared");
   };
 
   const handleFilterChange = (key: keyof Filters, value: string) => {
-    setFilters((prev) => ({
-      ...prev,
-      [key]: value,
-    }));
+    setFilters((prev) => ({ ...prev, [key]: value }));
   };
 
-  const applyFilters = async () => {
-    try {
-      setIsApplyingFilters(true);
-      setIsFiltersApplied(true);
-      toast.success("Filters applied");
-    } catch (err) {
-      console.error("Error applying filters:", err);
-      showError(err, "Failed to apply filters");
-    } finally {
-      setIsApplyingFilters(false);
-    }
-  };
-
-  // Get all unique years from all companies' yearStats
-  const availableYears = useMemo(() => {
-    const years = new Set<string>();
-    companies.forEach((company) => {
-      company.generalInfo.yearStats.forEach((stat) => years.add(stat.year));
-    });
-    return Array.from(years).sort().reverse();
-  }, [companies]);
+  if (showCreateForm) {
+    return (
+      <PageShell
+        eyebrow="Company CRM"
+        title="Create company profile"
+        description="Add the hiring relationship, HR contacts, and compensation history used by campus drives."
+        actions={
+          <Button variant="flat" onPress={() => setShowCreateForm(false)}>
+            Back to companies
+          </Button>
+        }
+      >
+        <CreateCompanyForm onClose={() => setShowCreateForm(false)} />
+      </PageShell>
+    );
+  }
 
   return (
-    <div className="min-h-screen p-6">
-      <div className="max-w-7xl mx-auto">
-        <AnimatePresence mode="wait">
-          {!showCreateForm ? (
-            <motion.div
-              key="list"
-              initial={{ opacity: 0, x: -20 }}
-              animate={{ opacity: 1, x: 0 }}
-              exit={{ opacity: 0, x: 20 }}
-              className="w-full"
+    <PageShell
+      eyebrow="Company CRM"
+      title="Company profiles"
+      description="Manage recruiter relationships, hiring history, compensation benchmarks, and company readiness for campus drives."
+      actions={
+        <>
+          <Button
+            variant="flat"
+            startContent={<RefreshCw size={16} />}
+            onPress={refreshCompanies}
+            isLoading={isRefreshing}
+            isDisabled={isLoading}
+          >
+            Refresh
+          </Button>
+          <Button
+            color="primary"
+            startContent={<Plus size={16} />}
+            onPress={() => setShowCreateForm(true)}
+          >
+            New profile
+          </Button>
+        </>
+      }
+    >
+      <section className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
+        <MetricCard
+          label="Companies"
+          value={companies.length}
+          detail={`${activeCompanies.length} active profiles`}
+          icon={<Building2 className="h-4 w-4" />}
+        />
+        <MetricCard
+          label="Students hired"
+          value={totalStudentsHired}
+          detail="Across recorded visits"
+          icon={<Users className="h-4 w-4" />}
+          tone="green"
+        />
+        <MetricCard
+          label="Highest package"
+          value={formatCurrency(topPackage)}
+          detail="Best recorded offer"
+          icon={<TrendingUp className="h-4 w-4" />}
+          tone="blue"
+        />
+        <MetricCard
+          label="Archived"
+          value={companies.length - activeCompanies.length}
+          detail="Hidden from active planning"
+          icon={<Archive className="h-4 w-4" />}
+          tone="amber"
+        />
+      </section>
+
+      <section className="campus-toolbar">
+        <div className="flex flex-1 flex-col gap-3 lg:flex-row lg:items-center">
+          <Input
+            aria-label="Search companies"
+            className="lg:max-w-sm"
+            placeholder="Search companies"
+            value={searchTerm}
+            onChange={(event) => setSearchTerm(event.target.value)}
+            startContent={<Search size={18} className="text-slate-400" />}
+          />
+          <Select
+            aria-label="Status"
+            className="lg:max-w-[150px]"
+            selectedKeys={[filter]}
+            onChange={(event) => setFilter(event.target.value as typeof filter)}
+          >
+            <SelectItem key="all">All</SelectItem>
+            <SelectItem key="active">Active</SelectItem>
+            <SelectItem key="archived">Archived</SelectItem>
+          </Select>
+          <Select
+            aria-label="Sort companies"
+            className="lg:max-w-[150px]"
+            selectedKeys={[sort]}
+            onChange={(event) => setSort(event.target.value)}
+          >
+            <SelectItem key="newest">Newest</SelectItem>
+            <SelectItem key="oldest">Oldest</SelectItem>
+          </Select>
+        </div>
+        <div className="grid gap-2 sm:grid-cols-2 xl:grid-cols-4">
+          <Select
+            aria-label="Visit year"
+            placeholder="Visit year"
+            selectedKeys={filters.year ? [filters.year] : []}
+            onChange={(event) => handleFilterChange("year", event.target.value)}
+          >
+            {availableYears.map((year) => (
+              <SelectItem key={year}>{year}</SelectItem>
+            ))}
+          </Select>
+          <Select
+            aria-label="Students hired"
+            placeholder="Students"
+            selectedKeys={filters.studentsRange ? [filters.studentsRange] : []}
+            onChange={(event) =>
+              handleFilterChange("studentsRange", event.target.value)
+            }
+          >
+            <SelectItem key="0-50">0-50</SelectItem>
+            <SelectItem key="51-100">51-100</SelectItem>
+            <SelectItem key="100+">100+</SelectItem>
+          </Select>
+          <Select
+            aria-label="Average package"
+            placeholder="Avg package"
+            selectedKeys={filters.averagePackage ? [filters.averagePackage] : []}
+            onChange={(event) =>
+              handleFilterChange("averagePackage", event.target.value)
+            }
+          >
+            <SelectItem key="0-10">0-10L</SelectItem>
+            <SelectItem key="10-20">10-20L</SelectItem>
+            <SelectItem key="20+">20L+</SelectItem>
+          </Select>
+          <div className="flex gap-2">
+            <Button
+              className="flex-1"
+              color="primary"
+              variant={isFiltersApplied ? "solid" : "flat"}
+              onPress={() => setIsFiltersApplied(true)}
             >
-              <div className="flex justify-between items-center mb-8">
-                <h1 className="text-2xl font-bold">
-                  Company Profiles
-                  {isRefreshing && <Spinner size="sm" className="ml-2" />}
-                </h1>
-                <div className="flex gap-2">
-                  <Button
-                    variant="bordered"
-                    onClick={refreshCompanies}
-                    isLoading={isRefreshing}
-                    isDisabled={isLoading}
-                  >
-                    Refresh
-                  </Button>
-                  <Button
-                    color="primary"
-                    startContent={<Plus size={20} />}
-                    onClick={() => setShowCreateForm(true)}
-                  >
-                    Create New Profile
-                  </Button>
-                </div>
-              </div>
+              Apply
+            </Button>
+            {(isFiltersApplied || searchTerm || filter !== "all") && (
+              <Button variant="light" onPress={clearFilters}>
+                Clear
+              </Button>
+            )}
+          </div>
+        </div>
+      </section>
 
-              <div className="flex gap-8">
-                <div className="w-1/4">
-                  <Card className="p-4">
-                    <h2 className="text-xl font-semibold mb-4">Filters</h2>
-
-                    <div className="space-y-4">
-                      <div>
-                        <label className="text-sm text-default-500">
-                          Last Visited
-                        </label>
-                        <Select
-                          placeholder="Select Year"
-                          value={filters.year}
-                          onChange={(e) =>
-                            handleFilterChange("year", e.target.value)
-                          }
-                          className="w-full mt-1"
-                          isDisabled={isApplyingFilters || isClearingFilters}
-                        >
-                          {availableYears.map((year) => (
-                            <SelectItem key={year} value={year}>
-                              {year}
-                            </SelectItem>
-                          ))}
-                        </Select>
-                      </div>
-
-                      <div>
-                        <label className="text-sm text-default-500">
-                          Students Hired
-                        </label>
-                        <Select
-                          placeholder="Select Range"
-                          value={filters.studentsRange}
-                          onChange={(e) =>
-                            handleFilterChange("studentsRange", e.target.value)
-                          }
-                          className="w-full mt-1"
-                          isDisabled={isApplyingFilters || isClearingFilters}
-                        >
-                          <SelectItem key="0-50">0-50</SelectItem>
-                          <SelectItem key="51-100">51-100</SelectItem>
-                          <SelectItem key="100+">100+</SelectItem>
-                        </Select>
-                      </div>
-
-                      <div>
-                        <label className="text-sm text-default-500">
-                          Average Package
-                        </label>
-                        <Select
-                          placeholder="Select Range"
-                          value={filters.averagePackage}
-                          onChange={(e) =>
-                            handleFilterChange("averagePackage", e.target.value)
-                          }
-                          className="w-full mt-1"
-                          isDisabled={isApplyingFilters || isClearingFilters}
-                        >
-                          <SelectItem key="0-10">0-10L</SelectItem>
-                          <SelectItem key="10-20">10-20L</SelectItem>
-                          <SelectItem key="20+">20L+</SelectItem>
-                        </Select>
-                      </div>
-
-                      <div>
-                        <label className="text-sm text-default-500">
-                          Highest Package
-                        </label>
-                        <Select
-                          placeholder="Select Range"
-                          value={filters.highestPackage}
-                          onChange={(e) =>
-                            handleFilterChange("highestPackage", e.target.value)
-                          }
-                          className="w-full mt-1"
-                          isDisabled={isApplyingFilters || isClearingFilters}
-                        >
-                          <SelectItem key="0-10">0-10L</SelectItem>
-                          <SelectItem key="10-20">10-20L</SelectItem>
-                          <SelectItem key="20+">20L+</SelectItem>
-                        </Select>
-                      </div>
-
-                      <div className="flex justify-between pt-4">
-                        <Button
-                          size="sm"
-                          variant="light"
-                          onClick={clearFilters}
-                          isLoading={isClearingFilters}
-                          isDisabled={isApplyingFilters || isClearingFilters}
-                        >
-                          Clear All
-                        </Button>
-                        <Button
-                          size="sm"
-                          color="primary"
-                          onClick={applyFilters}
-                          isLoading={isApplyingFilters}
-                          isDisabled={isApplyingFilters || isClearingFilters}
-                        >
-                          {isApplyingFilters ? "Applying..." : "Apply Filters"}
-                        </Button>
-                      </div>
-                    </div>
-                  </Card>
-                </div>
-
-                <div className="w-3/4">
-                  <div className="flex justify-between items-center mb-6">
-                    <div className="flex gap-4 items-center">
-                      <Select
-                        className="w-[200px]"
-                        selectedKeys={[sort]}
-                        onChange={(e) => setSort(e.target.value)}
-                      >
-                        <SelectItem key="newest">Newest</SelectItem>
-                        <SelectItem key="oldest">Oldest</SelectItem>
-                      </Select>
-                      <Input
-                        className="w-[300px]"
-                        placeholder="Search Company"
-                        value={searchTerm}
-                        onChange={(e) => setSearchTerm(e.target.value)}
-                        startContent={<Search size={20} />}
-                      />
-                    </div>
+      <section className="campus-table">
+        {isLoading ? (
+          <div className="flex h-64 items-center justify-center">
+            <Spinner size="lg" />
+          </div>
+        ) : error ? (
+          <EmptyState
+            icon={<Building2 className="h-5 w-5" />}
+            title="Unable to load companies"
+            description={error}
+            action={
+              <Button color="primary" onPress={refreshCompanies}>
+                Retry
+              </Button>
+            }
+          />
+        ) : filteredCompanies.length === 0 ? (
+          <EmptyState
+            icon={<Building2 className="h-5 w-5" />}
+            title="No companies found"
+            description={
+              searchTerm || isFiltersApplied
+                ? "Adjust your search or filters to broaden the result set."
+                : "Create your first company profile to start planning drives."
+            }
+            action={
+              <Button
+                color="primary"
+                startContent={<Plus size={16} />}
+                onPress={() => setShowCreateForm(true)}
+              >
+                New profile
+              </Button>
+            }
+          />
+        ) : (
+          <div className="divide-y divide-slate-100">
+            {filteredCompanies.map((company) => (
+              <article
+                key={company._id}
+                className="grid cursor-pointer gap-4 px-5 py-4 transition hover:bg-slate-50 xl:grid-cols-[1fr_180px_180px_170px_auto]"
+                onClick={() => navigate(`/companies/${company._id}`)}
+              >
+                <div className="min-w-0">
+                  <div className="flex flex-wrap items-center gap-2">
+                    <h2 className="truncate text-sm font-semibold text-slate-950">
+                      {company.name}
+                    </h2>
+                    <StatusPill tone={company.isArchived ? "neutral" : "success"}>
+                      {company.isArchived ? "Archived" : "Active"}
+                    </StatusPill>
                   </div>
-
-                  <div className="flex gap-4 mb-6">
-                    <Button
-                      className={`w-1/3 ${
-                        filter === "all" ? "bg-default-100" : ""
-                      }`}
-                      variant={filter === "all" ? "flat" : "ghost"}
-                      onClick={() => setFilter("all")}
-                    >
-                      All
-                    </Button>
-                    <Button
-                      className={`w-1/3 ${
-                        filter === "active" ? "bg-success-100" : ""
-                      }`}
-                      variant={filter === "active" ? "flat" : "ghost"}
-                      onClick={() => setFilter("active")}
-                    >
-                      Active
-                    </Button>
-                    <Button
-                      className={`w-1/3 ${
-                        filter === "archived" ? "bg-default-100" : ""
-                      }`}
-                      variant={filter === "archived" ? "flat" : "ghost"}
-                      onClick={() => setFilter("archived")}
-                    >
-                      Archived
-                    </Button>
-                  </div>
-
-                  {isLoading ? (
-                    <div className="flex justify-center items-center h-64">
-                      <Spinner size="lg" />
-                    </div>
-                  ) : error ? (
-                    <div className="bg-danger-50 dark:bg-danger-900 rounded-lg p-8 text-center">
-                      <h3 className="text-lg font-medium text-danger-700 dark:text-danger-300 mb-2">
-                        Error loading companies
-                      </h3>
-                      <p className="text-danger-600 dark:text-danger-400 mb-4">
-                        {error}
-                      </p>
-                      <Button
-                        color="primary"
-                        onClick={refreshCompanies}
-                        isLoading={isRefreshing}
-                      >
-                        Retry
-                      </Button>
-                    </div>
-                  ) : filteredCompanies.length === 0 ? (
-                    <div className="bg-default-50 dark:bg-default-800 rounded-lg p-8 text-center">
-                      <h3 className="text-lg font-medium text-default-700 dark:text-default-300 mb-2">
-                        No companies found
-                      </h3>
-                      <p className="text-default-500 dark:text-default-400 mb-6">
-                        {searchTerm || isFiltersApplied
-                          ? "Try adjusting your search or filters"
-                          : "Create your first company profile to get started"}
-                      </p>
-                      <Button
-                        color="primary"
-                        startContent={<Plus size={18} />}
-                        onClick={() => setShowCreateForm(true)}
-                      >
-                        Create New Company
-                      </Button>
-                    </div>
-                  ) : (
-                    <div className="space-y-4">
-                      {filteredCompanies.map((company) => (
-                        <Card
-                          key={company._id}
-                          className="p-4 cursor-pointer w-full hover:shadow-md transition-shadow"
-                          isPressable
-                          onClick={() => navigate(`/companies/${company._id}`)}
-                        >
-                          <div className="flex justify-between items-center">
-                            <div>
-                              <div className="flex items-center gap-2 mb-2">
-                                <h3 className="text-lg font-semibold">
-                                  {company.name}
-                                </h3>
-                                <span
-                                  className={`px-2 py-1 rounded-full text-xs ${
-                                    company.isArchived
-                                      ? "bg-default-100 text-default-600"
-                                      : "bg-success-100 text-success-600"
-                                  }`}
-                                >
-                                  {company.isArchived ? "Archived" : "Active"}
-                                </span>
-                                <span className="px-2 py-1 rounded-full text-xs bg-success-100 text-success-600">
-                                  Average Package{" "}
-                                  {formatCurrency(getAveragePackage(company))}
-                                </span>
-                              </div>
-
-                              <div className="flex items-center gap-4 text-sm text-default-500 mb-4">
-                                <div className="flex items-center gap-2">
-                                  <Calendar size={16} />
-                                  <span>
-                                    Last Visit {getMostRecentYear(company)}
-                                  </span>
-                                </div>
-                                <div className="flex items-center gap-2">
-                                  <Users size={16} />
-                                  <span>
-                                    {getTotalStudentsHired(company)} Students
-                                    Hired
-                                  </span>
-                                </div>
-                                <div className="flex items-center gap-2">
-                                  <DollarSign size={16} />
-                                  <span>
-                                    Highest Package{" "}
-                                    {formatCurrency(getHighestPackage(company))}
-                                  </span>
-                                </div>
-                              </div>
-                            </div>
-
-                            <div className="flex gap-2 items-center justify-center">
-                              <Dropdown>
-                                <DropdownTrigger>
-                                  <Button
-                                    isIconOnly
-                                    variant="light"
-                                    onClick={(e) => e.stopPropagation()}
-                                    isDisabled={
-                                      archivingCompanyId === company._id
-                                    }
-                                  >
-                                    {archivingCompanyId === company._id ? (
-                                      <Spinner size="sm" />
-                                    ) : (
-                                      <MoreVertical size={20} />
-                                    )}
-                                  </Button>
-                                </DropdownTrigger>
-                                <DropdownMenu
-                                  onAction={(key) => {
-                                    if (key === "edit") {
-                                      setCompanyToEdit(company);
-                                      setShowEditModal(true);
-                                    } else if (key === "archive") {
-                                      handleArchive(company._id!);
-                                    } else if (key === "delete") {
-                                      setCompanyToDelete(company._id!);
-                                      setShowDeleteModal(true);
-                                    }
-                                  }}
-                                  disabledKeys={[
-                                    ...(company.isArchived ? ["edit"] : []), // Disable edit for archived companies
-                                    ...(archivingCompanyId === company._id
-                                      ? ["edit", "archive", "delete"]
-                                      : []),
-                                  ]}
-                                >
-                                  {!company.isArchived ? (
-                                    <DropdownItem key="edit">
-                                      Edit Profile
-                                    </DropdownItem>
-                                  ) : null}
-                                  <DropdownItem key="archive">
-                                    {company.isArchived
-                                      ? "Unarchive"
-                                      : "Archive"}
-                                  </DropdownItem>
-                                  <DropdownItem
-                                    key="delete"
-                                    className="text-danger"
-                                    color="danger"
-                                  >
-                                    Delete
-                                  </DropdownItem>
-                                </DropdownMenu>
-                              </Dropdown>
-                            </div>
-                          </div>
-                        </Card>
-                      ))}
-                    </div>
-                  )}
+                  <p className="mt-1 text-sm text-slate-500">
+                    Average package {formatCurrency(getAveragePackage(company))}
+                  </p>
                 </div>
-              </div>
-            </motion.div>
-          ) : (
-            <motion.div
-              key="form"
-              initial={{ opacity: 0, x: 20 }}
-              animate={{ opacity: 1, x: 0 }}
-              exit={{ opacity: 0, x: -20 }}
-              className="w-full"
-            >
-              <CreateCompanyForm onClose={() => setShowCreateForm(false)} />
-            </motion.div>
-          )}
-        </AnimatePresence>
-      </div>
+                <div>
+                  <p className="campus-muted-label">Last visit</p>
+                  <p className="mt-1 flex items-center gap-2 text-sm text-slate-700">
+                    <Calendar className="h-4 w-4 text-slate-400" />
+                    {getMostRecentYear(company)}
+                  </p>
+                </div>
+                <div>
+                  <p className="campus-muted-label">Students hired</p>
+                  <p className="mt-1 text-sm text-slate-700">
+                    {getTotalStudentsHired(company)}
+                  </p>
+                </div>
+                <div>
+                  <p className="campus-muted-label">Highest package</p>
+                  <p className="mt-1 text-sm text-slate-700">
+                    {formatCurrency(getHighestPackage(company))}
+                  </p>
+                </div>
+                <div
+                  className="flex items-center justify-end"
+                  onClick={(event) => event.stopPropagation()}
+                >
+                  <Dropdown>
+                    <DropdownTrigger>
+                      <Button
+                        isIconOnly
+                        variant="flat"
+                        aria-label="Company actions"
+                        isDisabled={archivingCompanyId === company._id}
+                      >
+                        {archivingCompanyId === company._id ? (
+                          <Spinner size="sm" />
+                        ) : (
+                          <MoreVertical size={18} />
+                        )}
+                      </Button>
+                    </DropdownTrigger>
+                    <DropdownMenu
+                      onAction={(key) => {
+                        if (key === "edit") {
+                          setCompanyToEdit(company);
+                          setShowEditModal(true);
+                        }
+                        if (key === "archive") handleArchive(company._id!);
+                        if (key === "delete") {
+                          setCompanyToDelete(company._id!);
+                          setShowDeleteModal(true);
+                        }
+                      }}
+                      disabledKeys={company.isArchived ? ["edit"] : []}
+                    >
+                      {!company.isArchived ? (
+                        <DropdownItem key="edit">Edit profile</DropdownItem>
+                      ) : null}
+                      <DropdownItem key="archive">
+                        {company.isArchived ? "Unarchive" : "Archive"}
+                      </DropdownItem>
+                      <DropdownItem
+                        key="delete"
+                        className="text-danger"
+                        color="danger"
+                        startContent={<Trash2 size={16} />}
+                      >
+                        Delete
+                      </DropdownItem>
+                    </DropdownMenu>
+                  </Dropdown>
+                </div>
+              </article>
+            ))}
+          </div>
+        )}
+      </section>
 
       {showDeleteModal && (
-        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
-          <motion.div
-            initial={{ opacity: 0, scale: 0.95 }}
-            animate={{ opacity: 1, scale: 1 }}
-            className="bg-white dark:bg-gray-900 rounded-lg p-6 max-w-md w-full"
-          >
-            <h3 className="text-lg font-semibold mb-4">Confirm Deletion</h3>
-            <p className="mb-6">
-              Are you sure you want to delete this company? This action cannot
-              be undone.
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/40 p-4">
+          <div className="w-full max-w-md rounded-lg border border-slate-200 bg-white p-6 shadow-xl">
+            <h3 className="text-lg font-semibold text-slate-950">
+              Delete company
+            </h3>
+            <p className="mt-2 text-sm leading-6 text-slate-600">
+              This action cannot be undone. Existing references may no longer
+              resolve in drive history.
             </p>
-            <div className="flex justify-end gap-3">
+            <div className="mt-6 flex justify-end gap-3">
               <Button
                 variant="flat"
-                onClick={() => setShowDeleteModal(false)}
+                onPress={() => setShowDeleteModal(false)}
                 isDisabled={isDeleting}
               >
                 Cancel
@@ -736,16 +593,14 @@ const CompanyProfiles = () => {
               <Button
                 color="danger"
                 isLoading={isDeleting}
-                onClick={() => {
-                  if (companyToDelete) {
-                    handleDelete(companyToDelete);
-                  }
+                onPress={() => {
+                  if (companyToDelete) handleDelete(companyToDelete);
                 }}
               >
-                {isDeleting ? "Deleting..." : "Delete"}
+                Delete
               </Button>
             </div>
-          </motion.div>
+          </div>
         </div>
       )}
 
@@ -759,7 +614,7 @@ const CompanyProfiles = () => {
           onSave={handleEditSuccess}
         />
       )}
-    </div>
+    </PageShell>
   );
 };
 

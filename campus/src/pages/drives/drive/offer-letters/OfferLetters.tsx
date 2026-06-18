@@ -33,7 +33,7 @@ import {
   User as UserIcon,
 } from "lucide-react";
 import { ExtendedCandidate } from "@shared-types/ExtendedCandidate";
-import { useAuth } from "@clerk/clerk-react";
+import { useAuth } from "@/auth";
 import ax from "@/config/axios";
 import { toast } from "sonner";
 import { ExtendedAppliedDrive } from "@shared-types/ExtendedAppliedDrive";

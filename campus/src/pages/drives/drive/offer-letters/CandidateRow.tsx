@@ -1,6 +1,6 @@
 import { ExtendedCandidate } from "@shared-types/ExtendedCandidate";
 import { ExtendedAppliedDrive } from "@shared-types/ExtendedAppliedDrive";
-import { useAuth } from "@clerk/clerk-react";
+import { useAuth } from "@/auth";
 import { useState, useMemo } from "react";
 import { TableRow, TableCell, Chip, Button, Tooltip } from "@nextui-org/react";
 import { Download, Mail } from "lucide-react";

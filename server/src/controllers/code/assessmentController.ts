@@ -18,7 +18,7 @@ import calculateCodeScore from "@/utils/calculateCodeScore";
 import { MCQAssessmentSubmission as IMCQAssessmentSubmission } from "@shared-types/MCQAssessmentSubmission";
 import Organization from "@/models/Organization";
 import { AuditLog, Member } from "@shared-types/Organization";
-import clerkClient from "@/config/clerk";
+import userDirectory from "@/services/userDirectory";
 import checkOrganizationPermission from "@/middlewares/checkOrganizationPermission";
 import AppliedPosting from "@/models/AppliedPosting";
 import { AppliedPosting as IAppliedPosting } from "@shared-types/AppliedPosting";
@@ -315,10 +315,10 @@ const createMcqAssessment = async (c: Context) => {
         updatedOn: new Date(),
       });
 
-      const clerkUser = await clerkClient.users.getUser(c.get("auth").userId);
+      const accountUser = await userDirectory.users.getUser(c.get("auth").userId);
       const auditLog: AuditLog = {
-        user: clerkUser.firstName + " " + clerkUser.lastName,
-        userId: clerkUser.publicMetadata?._id as string,
+        user: accountUser.firstName + " " + accountUser.lastName,
+        userId: accountUser.publicMetadata?._id as string,
         action: `Created New Assessment for Job Posting: ${posting.title}`,
         type: "info",
       };
@@ -458,10 +458,10 @@ const createCodeAssessment = async (c: Context) => {
         updatedOn: new Date(),
       });
 
-      const clerkUser = await clerkClient.users.getUser(c.get("auth").userId);
+      const accountUser = await userDirectory.users.getUser(c.get("auth").userId);
       const auditLog: AuditLog = {
-        user: clerkUser.firstName + " " + clerkUser.lastName,
-        userId: clerkUser.publicMetadata?._id as string,
+        user: accountUser.firstName + " " + accountUser.lastName,
+        userId: accountUser.publicMetadata?._id as string,
         action: `Created New Assessment for Job Posting: ${posting.title}`,
         type: "info",
       };

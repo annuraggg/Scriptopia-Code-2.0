@@ -5,7 +5,7 @@ import Contact from "./Contact";
 import Team from "./Team";
 import { Button } from "@heroui/button";
 import { toast } from "sonner";
-import { useAuth, useUser } from "@clerk/clerk-react";
+import { useAuth, useUser } from "@/auth";
 import { setOrganization } from "@/reducers/organizationReducer";
 import { useDispatch } from "react-redux";
 import ax from "@/config/axios";

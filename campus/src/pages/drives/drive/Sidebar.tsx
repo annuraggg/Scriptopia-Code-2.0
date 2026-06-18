@@ -30,7 +30,7 @@ import {
   useDisclosure,
 } from "@heroui/modal";
 import ax from "@/config/axios";
-import { useAuth } from "@clerk/clerk-react";
+import { useAuth } from "@/auth";
 
 interface SidebarProps {
   drive: Drive;

@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { useAuth } from "@clerk/clerk-react";
+import { useAuth } from "@/auth";
 import { useNavigate, useOutletContext } from "react-router-dom";
 import { toast } from "sonner";
 import ax from "@/config/axios";

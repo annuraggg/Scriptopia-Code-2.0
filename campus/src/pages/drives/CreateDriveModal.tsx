@@ -10,7 +10,7 @@ import {
   Textarea,
 } from "@nextui-org/react";
 import { Select, SelectItem } from "@nextui-org/select";
-import { useAuth } from "@clerk/clerk-react";
+import { useAuth } from "@/auth";
 import ax from "@/config/axios";
 import { toast } from "sonner";
 import { Department } from "@shared-types/Institute";

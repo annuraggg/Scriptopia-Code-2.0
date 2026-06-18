@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from "react";
-import { useAuth, useUser } from "@clerk/clerk-react";
+import { useAuth, useUser } from "@/auth";
 import { toast } from "sonner";
 import ax from "@/config/axios";
 import { Button } from "@/components/ui/button";

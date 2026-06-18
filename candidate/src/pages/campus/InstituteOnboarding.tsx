@@ -1,6 +1,6 @@
 import Loader from "@/components/Loader";
 import ax from "@/config/axios";
-import { useAuth } from "@clerk/clerk-react";
+import { useAuth } from "@/auth";
 import {
   Button,
   Input,

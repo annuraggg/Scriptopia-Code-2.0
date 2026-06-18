@@ -17,7 +17,7 @@ import {
 import { Eye, UserCheck, UserX, Users } from "lucide-react";
 import { Input } from "@heroui/input";
 import { Button } from "@heroui/button";
-import { useAuth } from "@clerk/clerk-react";
+import { useAuth } from "@/auth";
 import ax from "@/config/axios";
 import { toast } from "sonner";
 import { IconChevronDown, IconMenu2 } from "@tabler/icons-react";

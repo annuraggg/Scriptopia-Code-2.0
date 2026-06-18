@@ -1,9 +1,0 @@
-
-{
-  "type": "module",
-  "dependencies": {
-    "@clerk/backend": "^1.27.1",
-    "csv-parser": "^3.2.0",
-    "dotenv": "^16.4.7"
-  }
-}

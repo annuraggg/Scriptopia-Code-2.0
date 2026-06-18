@@ -1,6 +1,6 @@
 // At the top of your file, keep the imports exactly as they were in your original code
 import { useEffect, useState } from "react";
-import { useAuth, useUser } from "@clerk/clerk-react";
+import { useAuth, useUser } from "@/auth";
 import { toast } from "sonner";
 import ax from "@/config/axios";
 import {

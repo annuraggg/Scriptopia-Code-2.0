@@ -8,7 +8,7 @@ import QualityGate from "./QualityGate";
 import { ChevronLeft, ChevronRight } from "lucide-react";
 import { toast } from "sonner";
 import { Delta } from "quill/core";
-import { useAuth } from "@clerk/clerk-react";
+import { useAuth } from "@/auth";
 import ax from "@/config/axios";
 import { CustomStub as CustomSDSL, TestCase } from "@shared-types/Problem";
 import Sdsl from "./Sdsl";
