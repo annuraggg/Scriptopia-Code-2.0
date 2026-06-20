@@ -1,20 +1,6 @@
-import pino, { transport } from "pino";
+import pino from "pino";
 
-const pinoLog = pino(
-  { level: "info" },
-  transport({
-    targets: [
-      {
-        target: "@axiomhq/pino",
-        options: {
-          dataset: process.env.AXIOM_DATASET,
-          token: process.env.AXIOM_TOKEN,
-        },
-      },
-      // { target: "pino-pretty", options: { colorize: true } },
-    ],
-  })
-);
+const pinoLog = pino({ level: process.env.LOG_LEVEL || "info" });
 class logger {
   info(message: string) {
     const date = new Date();

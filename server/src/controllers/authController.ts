@@ -21,6 +21,9 @@ const publicUser = async (user: any) => ({
   lastLoginAt: user.lastLoginAt,
   sessions: user.sessions || [],
   loginHistory: user.loginHistory || [],
+  preferences: user.preferences || {},
+  security: user.security || {},
+  accountActivity: user.accountActivity || [],
 });
 
 const createSession = async (user: any, c: Context) => {
@@ -50,6 +53,16 @@ const createSession = async (user: any, c: Context) => {
     ...(user.loginHistory || []),
   ].slice(0, 25);
   user.lastLoginAt = new Date();
+  user.accountActivity = [
+    {
+      action: "Signed in",
+      platform: c.req.header("x-scriptopia-platform") || "suite",
+      ipAddress: session.ipAddress,
+      userAgent: session.userAgent,
+      createdAt: new Date(),
+    },
+    ...(user.accountActivity || []),
+  ].slice(0, 100);
   await user.save();
 
   return { token, user: await publicUser(user) };
@@ -160,6 +173,40 @@ const updateProfile = async (c: Context) => {
   return sendSuccess(c, 200, "Profile updated", await publicUser(user));
 };
 
+const updatePreferences = async (c: Context) => {
+  const auth = c.get("auth");
+  const preferences = await c.req.json();
+  const allowed = [
+    "theme",
+    "locale",
+    "timezone",
+    "reducedMotion",
+    "emailNotifications",
+    "productNotifications",
+  ];
+  const updates = Object.fromEntries(
+    Object.entries(preferences)
+      .filter(([key]) => allowed.includes(key))
+      .map(([key, value]) => [`preferences.${key}`, value])
+  );
+  const user = await User.findByIdAndUpdate(auth._id, { $set: updates }, { new: true });
+  if (!user) return sendError(c, 404, "Account not found");
+  return sendSuccess(c, 200, "Preferences updated", await publicUser(user));
+};
+
+const accountOverview = async (c: Context) => {
+  const auth = c.get("auth");
+  const user = await User.findById(auth._id);
+  if (!user) return sendError(c, 404, "Account not found");
+  const metadata = await getUserMetadata(auth._id);
+  return sendSuccess(c, 200, "Account overview fetched", {
+    profile: await publicUser(user),
+    roles: metadata,
+    sessions: user.sessions || [],
+    activity: user.accountActivity || [],
+  });
+};
+
 const changePassword = async (c: Context) => {
   const auth = c.get("auth");
   const { currentPassword, newPassword } = await c.req.json();
@@ -173,6 +220,10 @@ const changePassword = async (c: Context) => {
   }
 
   user.passwordHash = hashPassword(newPassword);
+  user.security = {
+    ...(user.security || {}),
+    lastPasswordChangeAt: new Date(),
+  } as any;
   user.sessions = user.sessions.filter((session: any) => session.id === auth.sessionId) as any;
   await user.save();
   return sendSuccess(c, 200, "Password updated");
@@ -195,6 +246,8 @@ export default {
   forgotPassword,
   resetPassword,
   updateProfile,
+  updatePreferences,
+  accountOverview,
   changePassword,
   revokeSession,
 };

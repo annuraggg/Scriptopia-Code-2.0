@@ -15,7 +15,7 @@ import {
   DrawerTitle,
 } from "@/components/ui/drawer";
 import { Button, Card, CardBody, Spinner } from "@heroui/react";
-import { CpuIcon, TimerIcon, CoinsIcon } from "lucide-react";
+import { CpuIcon, TimerIcon } from "lucide-react";
 import { Submission } from "@shared-types/Submission";
 import { useAuth } from "@/auth";
 import defaultLanguages from "@/data/languages";
@@ -23,58 +23,6 @@ import { Problem as ProblemType } from "@shared-types/Problem";
 import { Delta } from "quill/core";
 import starterGenerator from "@/functions/starterGenerator";
 import { toast } from "sonner";
-
-const RewardDrawer = ({
-  isOpen,
-  onClose,
-  reward,
-  difficulty,
-}: {
-  isOpen: boolean;
-  onClose: () => void;
-  reward: { earned: boolean; amount: number } | null;
-  difficulty: string;
-}) => {
-
-  return (
-    <Drawer open={isOpen} onClose={onClose}>
-      <DrawerContent className="outline-none">
-        <DrawerHeader>
-          <DrawerTitle>
-            {reward?.earned
-              ? "Congratulations! You earned Scrypto tokens!"
-              : "Solution Successful!"}
-          </DrawerTitle>
-          <DrawerDescription>
-            {reward?.earned
-              ? `You earned ${reward.amount} SCRYPTO tokens for solving this ${difficulty} problem!`
-              : `You solved the problem correctly, but no tokens were earned this time.`}
-          </DrawerDescription>
-        </DrawerHeader>
-
-        {reward?.earned && (
-          <div className="flex justify-center py-6">
-            <div className="flex flex-col items-center">
-              <CoinsIcon size={50} className="text-yellow-400 mb-4" />
-              <p className="text-2xl font-bold">{reward.amount} SCRYPTO</p>
-              <p className="text-sm text-gray-500 mt-2">
-                has been added to your wallet!
-              </p>
-            </div>
-          </div>
-        )}
-
-        <DrawerFooter>
-          <DrawerClose asChild>
-            <Button className="w-fit mx-auto" onClick={onClose}>
-              Close
-            </Button>
-          </DrawerClose>
-        </DrawerFooter>
-      </DrawerContent>
-    </Drawer>
-  );
-};
 
 const Problem = ({
   loading,
@@ -94,7 +42,6 @@ const Problem = ({
 
   submitOverride,
 
-  setRefetch,
 }: {
   loading: boolean;
   problem: ProblemType;
@@ -113,7 +60,6 @@ const Problem = ({
 
   submitOverride?: (code: string, language: string, problemId: string) => void;
 
-  setRefetch?: any;
 }) => {
   const { getToken } = useAuth();
   const axios = ax(getToken);
@@ -125,20 +71,9 @@ const Problem = ({
   const [, /*codeError*/ setCodeError] = useState<string>("");
   const [runningCode, setRunningCode] = useState<boolean>(false);
   const [currentSub, setCurrentSub] = useState<Submission | null>(null);
-  const [reward, setReward] = useState<{
-    earned: boolean;
-    amount: number;
-  } | null>(null);
-
   const [drawerOpen, setDrawerOpen] = useState<boolean>(false);
   const [leftPaneActTab, setLeftPaneActTab] = useState<string>("statement");
   const [componentLoading, setComponentLoading] = useState<boolean>(false);
-
-  useEffect(() => {
-    if (reward) {
-      setRefetch((prev: boolean) => !prev);
-    }
-  }, [reward]);
 
   useEffect(() => {
     if (!problem.sdsl) return;
@@ -222,10 +157,6 @@ const Problem = ({
             setSubmissions(newSubmissions || []);
           }
           setCurrentSub(res.data.data.submission);
-
-          if (res.data.data.reward) {
-            setReward(res.data.data.reward);
-          }
 
           setDrawerOpen(true);
         } else {
@@ -317,18 +248,7 @@ const Problem = ({
         </Split>
       </Split>
 
-      {drawerOpen &&
-        (reward ? (
-          <RewardDrawer
-            isOpen={drawerOpen}
-            onClose={() => {
-              setDrawerOpen(false);
-              setReward(null);
-            }}
-            reward={reward}
-            difficulty={problem.difficulty}
-          />
-        ) : (
+      {drawerOpen && (
           <Drawer open={drawerOpen} onClose={() => setDrawerOpen(false)}>
             <DrawerContent className="outline-none">
               <DrawerHeader>
@@ -374,7 +294,7 @@ const Problem = ({
               </DrawerFooter>
             </DrawerContent>
           </Drawer>
-        ))}
+        )}
     </>
   );
 };

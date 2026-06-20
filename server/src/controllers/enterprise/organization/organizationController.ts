@@ -119,7 +119,6 @@ const createOrganization = async (c: Context) => {
         status: "active",
         startedOn: new Date(),
         endsOn: new Date(new Date().setDate(new Date().getDate() + 15)),
-        lemonSqueezyId: " ",
       },
       roles: defaultOrganizationRoles,
       auditLogs: [auditLog],

@@ -36,6 +36,11 @@ import {
   sendNotificationToCandidate,
 } from "@/utils/sendNotification";
 import generateSampleInstituteData from "@/utils/generateSampleInstituteData";
+import {
+  generateMockData as generateInstituteMockData,
+  getMockDataStatus as readMockDataStatus,
+  removeMockData as removeInstituteMockData,
+} from "@/services/mockDataManager";
 
 const TOKEN_EXPIRY = "24h";
 const MAX_FILE_SIZE = 5 * 1024 * 1024;
@@ -2466,6 +2471,42 @@ const removeCandidate = async (c: Context) => {
   }
 };
 
+const mockDataInstituteId = async (c: Context) => {
+  const permission = await checkInstitutePermission.all(c, ["manage_institute"]);
+  if (!permission.allowed || !permission.data?.institute?._id) return null;
+  return permission.data.institute._id.toString();
+};
+
+const getMockDataStatus = async (c: Context) => {
+  try {
+    const instituteId = await mockDataInstituteId(c);
+    if (!instituteId) return sendError(c, 403, "You don't have permission to manage mock data");
+    return sendSuccess(c, 200, "Mock data status fetched", await readMockDataStatus(instituteId));
+  } catch (error) {
+    return sendError(c, 500, error instanceof Error ? error.message : "Failed to fetch mock data status");
+  }
+};
+
+const generateMockData = async (c: Context) => {
+  try {
+    const instituteId = await mockDataInstituteId(c);
+    if (!instituteId) return sendError(c, 403, "You don't have permission to manage mock data");
+    return sendSuccess(c, 201, "Mock data generated", await generateInstituteMockData(instituteId));
+  } catch (error) {
+    return sendError(c, 400, error instanceof Error ? error.message : "Failed to generate mock data");
+  }
+};
+
+const removeMockData = async (c: Context) => {
+  try {
+    const instituteId = await mockDataInstituteId(c);
+    if (!instituteId) return sendError(c, 403, "You don't have permission to manage mock data");
+    return sendSuccess(c, 200, "Mock data removed", await removeInstituteMockData(instituteId));
+  } catch (error) {
+    return sendError(c, 500, error instanceof Error ? error.message : "Failed to remove mock data");
+  }
+};
+
 export default {
   createInstitute,
   verifyInvite,
@@ -2489,4 +2530,7 @@ export default {
   removeCandidate,
   getResume,
   leaveInstitute,
+  getMockDataStatus,
+  generateMockData,
+  removeMockData,
 };

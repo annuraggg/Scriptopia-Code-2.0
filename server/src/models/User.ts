@@ -1,21 +1,6 @@
 import { softDeletePlugin } from "@/plugins/softDelete";
 import mongoose from "mongoose";
 
-const TransactionSchema = new mongoose.Schema(
-  {
-    amount: { type: Number, required: true },
-    problemId: { type: String, required: true },
-  },
-  { timestamps: true }
-);
-
-const WalletSchema = new mongoose.Schema({
-  address: { type: String, required: true },
-  privateKey: { type: String, required: true, select: false },
-  balance: { type: Number, default: 0 },
-  transactions: { type: [TransactionSchema], required: false },
-});
-
 const userSchema = new mongoose.Schema(
   {
     email: { type: String, required: true, unique: true, lowercase: true, trim: true },
@@ -48,11 +33,33 @@ const userSchema = new mongoose.Schema(
       ],
       default: [],
     },
+    preferences: {
+      theme: { type: String, enum: ["system", "light", "dark"], default: "system" },
+      locale: { type: String, default: "en-IN" },
+      timezone: { type: String, default: "Asia/Kolkata" },
+      reducedMotion: { type: Boolean, default: false },
+      emailNotifications: { type: Boolean, default: true },
+      productNotifications: { type: Boolean, default: true },
+    },
+    security: {
+      twoFactorEnabled: { type: Boolean, default: false },
+      lastPasswordChangeAt: { type: Date },
+    },
+    accountActivity: {
+      type: [
+        {
+          action: { type: String, required: true },
+          platform: { type: String, default: "accounts" },
+          ipAddress: { type: String, default: "" },
+          userAgent: { type: String, default: "" },
+          createdAt: { type: Date, default: Date.now },
+        },
+      ],
+      default: [],
+    },
     resetToken: { type: String, select: false },
     resetTokenExpiresAt: { type: Date, select: false },
     streak: { type: [Date] },
-    wallet: { type: WalletSchema, default: null },
-
     isSample: { type: Boolean, default: false },
     sampleInstituteId: { type: mongoose.Schema.Types.ObjectId, ref: "Institute" },
   },

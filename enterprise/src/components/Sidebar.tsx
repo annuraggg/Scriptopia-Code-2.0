@@ -8,7 +8,6 @@ import {
   IconChartPieFilled,
   IconBellFilled,
   IconSettingsFilled,
-  IconCreditCardFilled,
 } from "@tabler/icons-react";
 import { useEffect, useState } from "react";
 import { UserButton /*useAuth*/ } from "@/auth";
@@ -83,14 +82,6 @@ const Sidebar = ({
       label: "Settings",
       link: "/settings/general",
       visible: user?.permissions?.includes("manage_organization"),
-    },
-    {
-      icon: IconCreditCardFilled,
-      label: "Billing",
-      link: "/billing",
-      visible:
-        user?.permissions?.includes("view_billing") ||
-        user?.permissions?.includes("manage_billing"),
     },
     // {
     //   icon: BookOpenText,

@@ -38,6 +38,7 @@ const memberSchema = new Schema(
 const departmentSchema = new Schema({
   name: { type: String, required: true },
   description: { type: String, required: true },
+  isSample: { type: Boolean, default: false },
 });
 
 const auditLogSchema = new Schema(
@@ -108,6 +109,28 @@ const instituteSchema = new Schema(
     isSample: { type: Boolean, default: false },
     samplePassword: { type: String, default: null },
     sampleSalt: { type: String, default: null },
+    mockData: {
+      status: {
+        type: String,
+        enum: ["none", "generating", "ready", "removing", "failed"],
+        default: "none",
+      },
+      generatedAt: { type: Date },
+      generationId: { type: String },
+      recordCounts: {
+        departments: { type: Number, default: 0 },
+        students: { type: Number, default: 0 },
+        faculty: { type: Number, default: 0 },
+        companies: { type: Number, default: 0 },
+        placementGroups: { type: Number, default: 0 },
+        drives: { type: Number, default: 0 },
+        applications: { type: Number, default: 0 },
+        assessments: { type: Number, default: 0 },
+        interviews: { type: Number, default: 0 },
+        placementResults: { type: Number, default: 0 },
+      },
+      lastError: { type: String },
+    },
   },
   { timestamps: true }
 );

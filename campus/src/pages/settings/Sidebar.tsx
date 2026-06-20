@@ -6,6 +6,7 @@ import {
   Lock,
   SquareChevronRight,
   Boxes,
+  Database,
 } from "lucide-react";
 import { useEffect, useState } from "react";
 
@@ -42,6 +43,11 @@ const Sidebar = ({
       label: "Security",
       link: "/security/audit-logs",
     },
+    {
+      icon: Database,
+      label: "Mock Data",
+      link: "/data/mock",
+    },
     // {
     //   icon: Brush,
     //   label: "Personalization",
@@ -70,7 +76,7 @@ const Sidebar = ({
             <table>
               <tbody
                 className={` cursor-pointer h-8 ${
-                  active === item.label.toLowerCase() ? " text-accent" : ""
+                active === item.link.split("/").filter(Boolean)[0] ? " text-accent" : ""
                 } `}
                 onClick={() => {
                   if (toast) {
@@ -81,7 +87,7 @@ const Sidebar = ({
                     return;
                   }
                   navigate(`/settings${item.link}`);
-                  setActive(item.label.toLowerCase());
+                  setActive(item.link.split("/").filter(Boolean)[0]);
                 }}
               >
                 <tr>

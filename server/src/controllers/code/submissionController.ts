@@ -5,12 +5,6 @@ import { runCode as runCompilerCode } from "../../utils/runCode";
 import User from "../../models/User";
 import { TestCase } from "@shared-types/Problem";
 import Submission from "@/models/Submission";
-import {
-  shouldRewardUser,
-  sendTokenReward,
-} from "../../config/blockchainService";
-import Web3 from "web3";
-import { User as IUser } from "@shared-types/User";
 
 const runCode = async (c: Context) => {
   try {
@@ -95,8 +89,6 @@ const submitCode = async (c: Context) => {
       },
     });
 
-    let rewardResult = null;
-
     if (result.failedCaseNo === -1) {
       const date = new Date();
       const user = await User.findOne({ _id: u });
@@ -104,76 +96,7 @@ const submitCode = async (c: Context) => {
       if (user) {
         user.streak.push(date);
 
-        const shouldReward = shouldRewardUser(
-          prob.difficulty,
-          prob._id?.toString(),
-          user as unknown as IUser
-        );
-
-        if (shouldReward && user.wallet?.address) {
-          const rewardAmount =
-            prob.difficulty === "easy"
-              ? "1"
-              : prob.difficulty === "medium"
-              ? "2"
-              : "3";
-          const amountInWei = Web3.utils.toWei(
-            rewardAmount.toString(),
-            "ether"
-          );
-          console.log(amountInWei);
-
-          try {
-            const rewardSent = await sendTokenReward(
-              user.wallet.address,
-              rewardAmount
-            );
-
-            if (rewardSent) {
-              user.wallet.balance += parseFloat(rewardAmount);
-              rewardResult = {
-                earned: true,
-                amount: rewardAmount,
-              };
-
-              const newDbTransaction = {
-                amount: rewardAmount,
-                problemId: prob._id,
-              };
-
-              if (!user.wallet.transactions) {
-                // @ts-expect-error
-                user.wallet.transactions = [];
-              }
-
-              user.wallet.transactions?.push(newDbTransaction);
-            } else {
-              rewardResult = {
-                earned: false,
-                reason: "Token transfer failed",
-              };
-            }
-          } catch (error) {
-            console.error("Error sending token reward:", error);
-            rewardResult = {
-              earned: false,
-              reason: "Token transfer error",
-            };
-          }
-        } else {
-          rewardResult = {
-            earned: false,
-            reason: shouldReward ? "No wallet found" : "Luck not in your favor",
-          };
-        }
-
         await user.save();
-      } else {
-        console.error("User not found for reward:", u);
-        rewardResult = {
-          earned: false,
-          reason: "User not found",
-        };
       }
     }
 
@@ -197,7 +120,6 @@ const submitCode = async (c: Context) => {
     return sendSuccess(c, 200, "Success", {
       submission,
       result,
-      reward: rewardResult,
     });
   } catch (error) {
     console.log(error);

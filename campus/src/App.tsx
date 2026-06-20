@@ -39,7 +39,6 @@ const Companies = lazy(
 const Candidates = lazy(() => import("./pages/candidates/Candidates"));
 const Analytics = lazy(() => import("./pages/analytics/AnalyticsDashboard"));
 const Notifications = lazy(() => import("./pages/notifications/Notifications"));
-const Billing = lazy(() => import("./pages/billing/Billing"));
 const Documentation = lazy(() => import("./pages/documentation/Documentation"));
 const Support = lazy(() => import("./pages/support/Support"));
 
@@ -54,6 +53,7 @@ const AuditLogs = lazy(
   () => import("./pages/settings/security/audit-logs/Audit-Logs")
 );
 const OrgData = lazy(() => import("./pages/settings/security/data/Data"));
+const MockData = lazy(() => import("./pages/settings/data/MockData"));
 
 const StartOnboarding = lazy(() => import("./pages/onboarding/start/Start"));
 const CandidateProfile = lazy(() => import("./pages/candidates/Profile"));
@@ -442,6 +442,14 @@ function App() {
                 </Suspense>
               ),
             },
+            {
+              path: "data/mock",
+              element: (
+                <Suspense fallback={<Loader />}>
+                  <MockData />
+                </Suspense>
+              ),
+            },
           ],
         },
 
@@ -564,14 +572,6 @@ function App() {
           element: (
             <Suspense fallback={<Loader />}>
               <Notifications />
-            </Suspense>
-          ),
-        },
-        {
-          path: "billing",
-          element: (
-            <Suspense fallback={<Loader />}>
-              <Billing />
             </Suspense>
           ),
         },

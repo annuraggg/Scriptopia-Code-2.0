@@ -19,6 +19,9 @@ app.post("/settings/general", instituteController.updateGeneralSettings);
 app.post("/settings/logo", instituteController.updateLogo);
 app.post("/settings/members", instituteController.updateMembers);
 app.post("/settings/roles", instituteController.updateRoles);
+app.get("/settings/mock-data", instituteController.getMockDataStatus);
+app.post("/settings/mock-data", instituteController.generateMockData);
+app.delete("/settings/mock-data", instituteController.removeMockData);
 
 app.get('/candidates', instituteController.getCandidates);
 app.get('/candidates/pending', instituteController.getPendingCandidates);

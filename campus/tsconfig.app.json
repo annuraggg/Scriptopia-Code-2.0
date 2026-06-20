@@ -20,11 +20,10 @@
     "noUnusedLocals": true,
     "noUnusedParameters": true,
     "noFallthroughCasesInSwitch": true,
-    "baseUrl": ".",
     "paths": {
       "@/*": ["./src/*"],
       "@shared-types/*": ["../common/types/*"],
-      "@types/*": ["src/types/*"],
+      "@types/*": ["./src/types/*"],
       "@shared-data/*": ["../common/data/*"]
     }
   },

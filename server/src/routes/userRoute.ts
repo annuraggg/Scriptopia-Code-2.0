@@ -10,6 +10,8 @@ app.get("/auth/me", authController.me);
 app.post("/auth/forgot-password", authController.forgotPassword);
 app.post("/auth/reset-password", authController.resetPassword);
 app.patch("/auth/profile", authController.updateProfile);
+app.patch("/auth/preferences", authController.updatePreferences);
+app.get("/account", authController.accountOverview);
 app.post("/auth/change-password", authController.changePassword);
 app.delete("/auth/sessions/:sessionId", authController.revokeSession);
 app.get("/notifications", userController.getNotificationsForUser);

@@ -36,21 +36,51 @@ const generateSampleInstituteData = async (instituteId: string) => {
     throw new Error("Institute not found");
   }
 
-  await generateSampleInstituteDepartments(instituteId);
-  await generateSampleInstituteCandidates(instituteId);
-  await generateSamplePlacementGroups(
-    instituteId,
-    institute.createdBy?.toString()
+  const generationId = crypto.randomUUID();
+  await Institute.updateOne(
+    { _id: instituteId },
+    { $set: { "mockData.status": "generating", "mockData.generationId": generationId }, $unset: { "mockData.lastError": 1 } }
   );
-  await generateSampleCompanies(instituteId);
-  await generateSampleDrives(instituteId);
-  await generateSampleAppliedDrives(instituteId);
+  try {
+    await generateSampleInstituteDepartments(instituteId);
+    await generateSampleInstituteCandidates(instituteId);
+    await generateSamplePlacementGroups(instituteId, institute.createdBy?.toString());
+    await generateSampleCompanies(instituteId);
+    await generateSampleDrives(instituteId);
+    await generateSampleAppliedDrives(instituteId);
+
+    const refreshed = await Institute.findById(instituteId).lean();
+    const driveIds = refreshed?.drives || [];
+    const counts = {
+      departments: refreshed?.departments?.filter((item: any) => item.isSample).length || 0,
+      students: await Candidate.countDocuments({ institute: instituteId, isSample: true }),
+      faculty: 0,
+      companies: await Company.countDocuments({ _id: { $in: refreshed?.companies || [] }, isSample: true }),
+      placementGroups: await PlacementGroup.countDocuments({ institute: instituteId, isSample: true }),
+      drives: await Drive.countDocuments({ _id: { $in: driveIds }, isSample: true }),
+      applications: await AppliedDrive.countDocuments({ drive: { $in: driveIds }, isSample: true }),
+      assessments: 0,
+      interviews: 0,
+      placementResults: await AppliedDrive.countDocuments({ drive: { $in: driveIds }, isSample: true, status: "hired" }),
+    };
+    await Institute.updateOne(
+      { _id: instituteId },
+      { $set: { "mockData.status": "ready", "mockData.generatedAt": new Date(), "mockData.recordCounts": counts } }
+    );
+    return counts;
+  } catch (error) {
+    await Institute.updateOne(
+      { _id: instituteId },
+      { $set: { "mockData.status": "failed", "mockData.lastError": error instanceof Error ? error.message : "Generation failed" } }
+    );
+    throw error;
+  }
 };
 
 const generateSampleInstituteDepartments = async (instituteId: string) => {
   await Institute.updateOne(
     { _id: instituteId },
-    { $set: { departments: sampleDepartments } }
+    { $push: { departments: { $each: sampleDepartments.map((department) => ({ ...department, isSample: true })) } } }
   );
 
   await Institute.updateOne(

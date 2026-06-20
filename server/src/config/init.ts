@@ -20,12 +20,12 @@ import instituteRoute from "../routes/instituteRoute";
 import driveRoutes from "../routes/driveRoute";
 import postingRoutes from "../routes/postingRoute";
 import candidateRoute from "../routes/candidateRoute";
-import walletRoute from "@/routes/walletRoute";
 import placementGroupRoutes from "../routes/placementGroupsroute";
 import companyProfileRoute from "../routes/companyRoute";
 import meetRoutes from "../routes/meetRoutes";
 
 import userRoute from "../routes/userRoute";
+import platformRoute from "../routes/platformRoute";
 import { trackRouteHits } from "../middlewares/routeTracker";
 
 import { Server } from "socket.io";
@@ -69,6 +69,7 @@ app.route("/problems", problemRoute);
 app.route("/assessments", assessmentRoute);
 app.route("/submissions", submissionRoute);
 app.route("/users", userRoute);
+app.route("/platform", platformRoute);
 
 app.route("/organizations", organizationRoute);
 app.route("/postings", postingRoutes);
@@ -79,8 +80,6 @@ app.route("/institutes", instituteRoute);
 app.route("/drives", driveRoutes);
 app.route("/placement-groups", placementGroupRoutes);
 app.route("/companies", companyProfileRoute);
-
-app.route("/wallet", walletRoute);
 
 app.route("/meet", meetRoutes);
 

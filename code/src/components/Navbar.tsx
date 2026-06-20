@@ -2,11 +2,8 @@ import { UserButton } from "@/auth";
 import { useTheme } from './theme-provider';
 import { Button } from "@heroui/react";
 import { Moon, Sun } from 'lucide-react';
-import Wallet from './Wallet';
-import { useAuth } from "@/auth";
 
-const Navbar = ({ refetch }: { refetch: boolean }) => {
-  const { userId } = useAuth();
+const Navbar = () => {
   const links = [
     {
       path: "/problems",
@@ -55,7 +52,6 @@ const Navbar = ({ refetch }: { refetch: boolean }) => {
           >
             {theme === "dark" ? <Sun size={16} /> : <Moon size={16} />}
           </Button>
-          {userId && <Wallet userId={userId} refetch={refetch} />}
           <UserButton />
         </div>
       </div>

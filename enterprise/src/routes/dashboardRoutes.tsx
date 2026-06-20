@@ -10,7 +10,6 @@ const Analytics = lazy(() => import("../pages/analytics/Analytics"));
 const Notifications = lazy(
   () => import("../pages/notifications/Notifications")
 );
-const Billing = lazy(() => import("../pages/billing/Billing"));
 const Documentation = lazy(
   () => import("../pages/documentation/Documentation")
 );
@@ -62,14 +61,6 @@ const dashboardRoutes = [
         element: (
           <Suspense fallback={<Loader />}>
             <Notifications />
-          </Suspense>
-        ),
-      },
-      {
-        path: "billing",
-        element: (
-          <Suspense fallback={<Loader />}>
-            <Billing />
           </Suspense>
         ),
       },
